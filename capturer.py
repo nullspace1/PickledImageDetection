@@ -47,15 +47,21 @@ def __generate_training_data_pair__(file, files, settings):
     return crop_screenshot, crop_image, crop_rect, type
 
 
-def get_training_data(screenshots_folder, settings, result_file):
+def load_training_data(screenshots_folder, settings, result_file):
     files = [os.path.join(screenshots_folder, f) for f in listdir(screenshots_folder) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
     training_data = []
     for i in range(settings.iterations):
         for file in files:
             screenshot, crop_image, crop_rect, type = __generate_training_data_pair__(file, files, settings)
             training_data.append((screenshot, crop_image, np.array(crop_rect), type))
+            
+    max_height, max_width = max([entry[1].shape[0] for entry in training_data]), max([entry[1].shape[1] for entry in training_data])
+       
+    for i in range(len(training_data)):
+        sc, crop, rect, type = training_data[i]
+        crop = cv2.copyMakeBorder(crop, 0, max_height - crop.shape[0], 0, max_width - crop.shape[1], cv2.BORDER_CONSTANT, value=[0, 0, 0])
+        training_data[i] = (sc, crop, rect, type)
     
     training_data = np.array(training_data, dtype=object) 
     np.save(result_file, training_data)
-    return training_data
 
