@@ -12,5 +12,6 @@ settings = cap.Settings(
     iterations=2
 )
 
-net.get_model_graph_sample()
+cap.load_training_data('screenshots', settings, 'training_data.npy')
+net.train_pickled_model('training_data.npy')
 

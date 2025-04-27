@@ -21,6 +21,9 @@ class FeatureExtractor(tf.keras.layers.Layer):
     def call(self, inputs):
         screenshot, crop = inputs
         
+        screenshot = tf.image.per_image_standardization(screenshot)
+        crop = tf.image.per_image_standardization(crop)
+        
         sfeat1, sfeat2, sfeat3 = self.multilayer_convolve(screenshot)
         cfeat1, cfeat2, cfeat3 = self.multilayer_convolve(crop)
         
