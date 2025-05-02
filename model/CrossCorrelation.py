@@ -9,12 +9,19 @@ class CrossCorrelation(nn.Module):
         super().__init__()
         
     def cross_correlate(self, screen_feat: Tensor, template_feat: Tensor) -> Tensor:
-        template_feat = torch.flip(template_feat, [2])
-        template_feat = torch.flip(template_feat, [3])
+        template_feat = torch.flip(template_feat, [2,3])
+        
+        B,C,H,W = screen_feat.shape
+        _,_,h,w = template_feat.shape
+        
+        screen_feat = screen_feat.reshape(1,B*C,H,W)
+        template_feat = template_feat.reshape(B*C,1,h,w)
         
         print("Running cross correlation...")
 
         out = F.conv2d(screen_feat, template_feat, bias=None, stride=1, padding=0)
+        
+        out = out.reshape(B, C, out.shape[-2], out.shape[-1])
 
         return out
                
