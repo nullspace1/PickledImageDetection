@@ -14,7 +14,7 @@ dataset = PickledDataset("data/training_data.npy")
 model = Model()
 loss_func = Loss(0.5,0.5)
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-loader = DataLoader(dataset, batch_size=32, shuffle=True)
+loader = DataLoader(dataset, batch_size=3, shuffle=True)
 
 for epoch in range(10):
     running_loss = 0.0

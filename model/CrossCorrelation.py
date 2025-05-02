@@ -19,9 +19,11 @@ class CrossCorrelation(nn.Module):
         
         print("Running cross correlation...")
 
-        out = F.conv2d(screen_feat, template_feat,groups=B*C, bias=None, stride=1, padding=0)
+        out = F.conv2d(screen_feat, template_feat,groups=B*C)
         
         out = out.reshape(B,C,out.shape[-2],out.shape[-1])
+        
+        print(out.shape)
 
         return out
                

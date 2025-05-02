@@ -5,7 +5,7 @@ import torch.nn.functional as F
 class DetectionHead(nn.Module):
     def __init__(self):
         super().__init__()
-        self.conv2d = nn.Conv2d(64, 64, 3, stride=2, padding=1)
+        self.conv2d = nn.Conv2d(224, 64, 3, stride=2, padding=1)
         self.pooling = nn.AvgPool2d(3, stride=2, padding=1)
         self.dense_box = nn.Linear(64, 4)
         self.dense_found = nn.Linear(64, 1)
@@ -13,6 +13,7 @@ class DetectionHead(nn.Module):
     def forward(self, correlation : Tensor) -> tuple[Tensor,Tensor]:
         
         print("Running detection head...")
+        print(correlation.shape)
         
         correlation = self.conv2d(correlation)
         correlation = self.pooling(correlation)
