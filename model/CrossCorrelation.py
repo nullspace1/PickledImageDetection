@@ -16,20 +16,15 @@ class CrossCorrelation(nn.Module):
         
         screen_feat = screen_feat.reshape(1,B*C,H,W)
         template_feat = template_feat.reshape(B*C,1,h,w)
-        
-        print("Running cross correlation...")
 
         out = F.conv2d(screen_feat, template_feat,groups=B*C)
         
         out = out.reshape(B,C,out.shape[-2],out.shape[-1])
-        
-        print(out.shape)
 
         return out
                
     def forward(self, screenshot_feats : tuple[Tensor,Tensor,Tensor], template_feats : tuple[Tensor,Tensor,Tensor]) -> Tensor:
-        
-        print("Computing cross correlation...")
+
         
         correlation_1 : Tensor = self.cross_correlate(screenshot_feats[0], template_feats[0])
         correlation_2 : Tensor = self.cross_correlate(screenshot_feats[1], template_feats[1])
@@ -42,3 +37,11 @@ class CrossCorrelation(nn.Module):
         correlation : Tensor = torch.cat([correlation_1, correlation_2, correlation_3], dim=1)
         
         return correlation
+    
+    def test(self) -> None:
+        print("Testing cross correlation...")
+        test_input_1 = (torch.randn(1,3,32,32),torch.randn(1,3,16,16),torch.randn(1,3,8,8))
+        test_input_2 = (torch.randn(1,3,32,32),torch.randn(1,3,16,16),torch.randn(1,3,8,8))
+        output = self.forward(test_input_1, test_input_2)
+        assert output.shape == (1, 9, 128, 128)
+        
