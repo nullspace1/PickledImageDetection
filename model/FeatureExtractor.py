@@ -32,15 +32,13 @@ class FeatureExtractor(nn.Module):
         cfeat3 : torch.Tensor  = self.conv3(cfeat2)
         
         return (sfeat3, sfeat2, sfeat1), (cfeat3, cfeat2, cfeat1)
-    
-    def get_out_channels(self) -> tuple[int,int,int]:
-        return self.out_channels
+
     
     def test(self) -> None:
         input_screen = torch.randn(1, 1024, 512, 3)
         input_crop = torch.randn(1, 1024, 512,3)
         out = self.forward(input_screen, input_crop)
-        c1,c2,c3 = self.get_out_channels()
+        c1,c2,c3 = self.out_channels
         (sfeat3, sfeat2, sfeat1), (cfeat3, cfeat2, cfeat1) = out
         print('sfeat3.shape:', sfeat3.shape)
         print(f'expected: (1, {c3}, 128, 64)')

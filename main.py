@@ -14,9 +14,9 @@ capturer.load_training_data("data/screenshots", "data/training_data.npy")
 
 dataset = PickledDataset("data/training_data.npy")
 
-model = Model(feature_extractor=FeatureExtractor(out_channels=(4,8,16)), 
-              cross_correlation=CrossCorrelation(feature_map_size=(64,64)), 
-              detection_head=DetectionHead(feature_extractor_out_channels=(4,8,16), conv_out_channels=4, pool_size=(16,16)))
+model = Model(feature_extractor=FeatureExtractor(out_channels=(2,4,6)), 
+              cross_correlation=CrossCorrelation(feature_map_size=(32,32)), 
+              detection_head=DetectionHead(feature_extractor_out_channels=(2,4,6), conv_out_channels=4, pool_size=(4,4)))
 loss_func = Loss(0.5,0.5)
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 loader = DataLoader(dataset, batch_size=3, shuffle=True)

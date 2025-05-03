@@ -7,6 +7,7 @@ from model.DetectionHead import DetectionHead
 class Model(nn.Module):
     def __init__(self, feature_extractor: FeatureExtractor, cross_correlation: CrossCorrelation, detection_head: DetectionHead):
         super().__init__()
+        assert feature_extractor.out_channels == detection_head.out_channels
         self.feature_extractor = feature_extractor
         self.cross_correlation = cross_correlation
         self.detection_head = detection_head

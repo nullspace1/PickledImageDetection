@@ -6,6 +6,7 @@ import torch.nn.functional as F
 class DetectionHead(nn.Module):
     def __init__(self, feature_extractor_out_channels : tuple[int,int,int], conv_out_channels : int, pool_size : tuple[int,int]):
         super().__init__()
+        self.out_channels = feature_extractor_out_channels
         self.sum_channels = feature_extractor_out_channels[0] + feature_extractor_out_channels[1] + feature_extractor_out_channels[2]
         self.conv2d = nn.Conv2d(self.sum_channels, conv_out_channels, 3, stride=2, padding=1)
         self.pooling = nn.AdaptiveAvgPool2d(pool_size)
