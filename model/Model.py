@@ -5,11 +5,11 @@ from model.CrossCorrelation import CrossCorrelation
 from model.DetectionHead import DetectionHead
 
 class Model(nn.Module):
-    def __init__(self):
+    def __init__(self, feature_extractor: FeatureExtractor, cross_correlation: CrossCorrelation, detection_head: DetectionHead):
         super().__init__()
-        self.feature_extractor = FeatureExtractor()
-        self.cross_correlation = CrossCorrelation()
-        self.detection_head = DetectionHead()
+        self.feature_extractor = feature_extractor
+        self.cross_correlation = cross_correlation
+        self.detection_head = detection_head
         
     def forward(self, screenshot : Tensor, crop : Tensor) -> tuple[Tensor,Tensor]:
         screenshot_features, crop_features = self.feature_extractor.forward(screenshot, crop)

@@ -5,8 +5,9 @@ import torch.nn.functional as F
 
 
 class CrossCorrelation(nn.Module):
-    def __init__(self):
+    def __init__(self, feature_map_size : tuple[int,int]):
         super().__init__()
+        self.feature_map_size = feature_map_size
         
     def cross_correlate(self, screen_feat: Tensor, template_feat: Tensor) -> Tensor:
         template_feat = torch.flip(template_feat, [2,3])
@@ -24,15 +25,14 @@ class CrossCorrelation(nn.Module):
         return out
                
     def forward(self, screenshot_feats : tuple[Tensor,Tensor,Tensor], template_feats : tuple[Tensor,Tensor,Tensor]) -> Tensor:
-
-        
+  
         correlation_1 : Tensor = self.cross_correlate(screenshot_feats[0], template_feats[0])
         correlation_2 : Tensor = self.cross_correlate(screenshot_feats[1], template_feats[1])
         correlation_3 : Tensor = self.cross_correlate(screenshot_feats[2], template_feats[2])
         
-        correlation_1 : Tensor = F.interpolate(correlation_1, (128, 128))
-        correlation_2 : Tensor = F.interpolate(correlation_2, (128, 128))
-        correlation_3 : Tensor = F.interpolate(correlation_3, (128, 128))
+        correlation_1 : Tensor = F.interpolate(correlation_1, self.feature_map_size)
+        correlation_2 : Tensor = F.interpolate(correlation_2, self.feature_map_size)
+        correlation_3 : Tensor = F.interpolate(correlation_3, self.feature_map_size)
         
         correlation : Tensor = torch.cat([correlation_1, correlation_2, correlation_3], dim=1)
         
@@ -43,5 +43,7 @@ class CrossCorrelation(nn.Module):
         test_input_1 = (torch.randn(1,3,32,32),torch.randn(1,3,16,16),torch.randn(1,3,8,8))
         test_input_2 = (torch.randn(1,3,32,32),torch.randn(1,3,16,16),torch.randn(1,3,8,8))
         output = self.forward(test_input_1, test_input_2)
-        assert output.shape == (1, 9, 128, 128)
+        print('output.shape: ', output.shape)
+        print(f'expected: (1,9,{self.feature_map_size[0]},{self.feature_map_size[1]})')
+        assert output.shape == (1, 9, self.feature_map_size[0], self.feature_map_size[1])
         
