@@ -20,7 +20,6 @@ for epoch in range(10):
     running_loss = 0.0
     print(f"Epoch {epoch}")
     for (image,crop), (box_gt, found_gt) in loader:
-        print(image.shape)
         optimizer.zero_grad()
         box, found = model(image, crop)
         loss = loss_func.forward(box, found, box_gt, found_gt)
