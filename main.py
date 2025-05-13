@@ -1,29 +1,36 @@
-from Builder import DataBuilder
-from Loader import DataLoader
-from Model import Model
-from Trainer import Trainer
 import torch
-import numpy as np
-import os
-model_path = "data/model.pth"
-
-builder = DataBuilder()
-
-builder.build_data("data/screenshots", "data/training_data.npy")
-builder.build_data("data/screenshots", "data/validation_data.npy")
-
-training_data = np.load("data/training_data.npy", allow_pickle=True)
-validation_data = np.load("data/validation_data.npy", allow_pickle=True)
-
-training_loader = DataLoader(training_data)
-validation_loader = DataLoader(validation_data)
-
-model = Model()
-
-if os.path.exists(model_path):
-    model.load(model_path)
+from Hypernetwork import HyperNetwork
+from ImageProcessor import ImageProcessor
+from TemplateProcessor import TemplateProcessor
+from DataLoader import DataLoader
+from DataCreator import DataCreator
+from Trainer import Trainer
 
 
-trainer = Trainer(model, training_loader, validation_loader)
+## Initialize the model
+image_processor = ImageProcessor()
+template_processor = TemplateProcessor(1000)
+hypernetwork = HyperNetwork(image_processor, template_processor)
 
-trainer.train(5,save_path=model_path)
+
+## Initialize the data
+data_creator = DataCreator("data/screenshots", "data/templates")
+training_data_loader = DataLoader("data/training_data.npy", data_creator)
+validation_data_loader = DataLoader("data/validation_data.npy", data_creator)
+
+
+## Initialize the trainer
+trainer = Trainer(hypernetwork, training_data_loader, torch.optim.Adam(hypernetwork.parameters(), lr=0.001), "data/model.pth")
+
+
+## Train the model
+trainer.train(100)
+
+
+
+
+
+
+
+
+
