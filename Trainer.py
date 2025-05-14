@@ -59,7 +59,7 @@ class Trainer():
         print(f'Validation loss: {running_loss / len(self.data):.3f}')
         
     def test(self):
-        screenshot, template, box = torch.randn(1, 3, 1080, 1920), torch.randn(1, 3, 100,100), torch.randn(1, 4)
+        screenshot, template = torch.randn(1, 3, 1080, 1920), torch.randn(1, 3, 100,100)
         output = self.model(screenshot, template)
         
 if __name__ == "__main__":
