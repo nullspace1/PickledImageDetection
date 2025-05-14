@@ -49,7 +49,9 @@ class DataCreator:
                     templates[i] = (template, box)        
             for template, box in templates:
                 if box != (-1, -1, -1, -1):
-                    data.append((screenshot/255, template/255, box))
+                    heatmap = np.zeros((screenshot.shape[0], screenshot.shape[1]))
+                    heatmap[box[1]:box[1] + template.shape[0], box[0]:box[0] + template.shape[1]] = 1
+                    data.append((screenshot/255, template/255, heatmap))
         data = np.array(data, dtype=object)
         np.save(data_save_path, data)
                 

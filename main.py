@@ -14,7 +14,7 @@ hypernetwork = HyperNetwork(image_processor, template_processor)
 
 
 ## Initialize the data
-data_creator = DataCreator("data/screenshots", "data/templates")
+data_creator = DataCreator("data/screenshots", "data/templates",batch_size=1,samples=1)
 training_data_loader = DataLoader("data/training_data.npy", data_creator)
 validation_data_loader = DataLoader("data/validation_data.npy", data_creator)
 
@@ -24,7 +24,7 @@ trainer = Trainer(hypernetwork, training_data_loader, torch.optim.Adam(hypernetw
 
 
 ## Train the model
-trainer.train(100)
+trainer.train(1)
 
 
 

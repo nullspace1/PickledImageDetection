@@ -27,6 +27,13 @@ class HyperNetwork(torch.nn.Module):
     # image is (B,512,W,H)
     # template is (B,K,512,3,3)
     def forward(self, image, template):
+        
+        # unsqueeze if necessary
+        if image.dim() == 3:
+            image = image.unsqueeze(0)
+        if template.dim() == 3:
+            template = template.unsqueeze(0)
+        
         image_features = self.image_processor(image)
         template_kernel = self.template_processor(template)
         

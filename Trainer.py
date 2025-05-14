@@ -1,13 +1,19 @@
 import torch
-from torch.utils.data import DataLoader
 from tqdm import tqdm
 import os
 
+from Hypernetwork import HyperNetwork
+from ImageProcessor import ImageProcessor
+from DataLoader import DataLoader
+from DataCreator import DataCreator
+from TemplateProcessor import TemplateProcessor
+
 class Trainer():
-    def __init__(self, model, dataloader, optimizer : torch.optim.Optimizer, model_path = None):
+    def __init__(self, model, dataloader, optimizer : torch.optim.Optimizer, model_path):
         super(Trainer, self).__init__()
         self.model = model
-        if model_path is not None and isinstance(model_path, str) and os.path.exists(model_path):
+        self.model_path = model_path
+        if os.path.exists(model_path):
             self.model.load_state_dict(torch.load(model_path))
         self.optimizer = optimizer
         self.data = dataloader
@@ -32,7 +38,7 @@ class Trainer():
 
         if running_loss < self.best_loss:
             self.best_loss = running_loss
-            torch.save(self.model.state_dict(), f'best_model.pth')
+            torch.save(self.model.state_dict(), self.model_path)
             
     def train(self,epochs):
         for epoch in range(epochs):
@@ -50,6 +56,22 @@ class Trainer():
             loss = self.model.loss(outputs, targets)    
             running_loss += loss.item()
             pbar.set_postfix({'loss': f'{running_loss/len(self.data):.3f}'})    
-        print(f'Validation loss: {running_loss / len(self.data):.3f}')    
+        print(f'Validation loss: {running_loss / len(self.data):.3f}')
+        
+    def test(self):
+        screenshot, template, box = torch.randn(1, 3, 1080, 1920), torch.randn(1, 3, 100,100), torch.randn(1, 4)
+        output = self.model(screenshot, template)
+        
+if __name__ == "__main__":
+    model = HyperNetwork(
+            image_processor=ImageProcessor(),
+            template_processor=TemplateProcessor(1000))
+    trainer = Trainer(
+        model=model,
+        dataloader=DataLoader("data/training_data.npy", DataCreator("data/screenshots", "data/templates")),
+        optimizer=torch.optim.Adam(model.parameters(), lr=0.001),
+        model_path="data/model.pth"
+    )
+    trainer.test()
         
     
