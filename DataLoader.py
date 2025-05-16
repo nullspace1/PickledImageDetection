@@ -20,11 +20,20 @@ class DataLoader(torch.utils.data.Dataset):
         return len(self.data)
     
     def __getitem__(self, index):
-        screenshot, template, box = self.data[index]
+        screenshot_file_link, heatmap_file_link, template_file_link  = self.data[index]
+        
+        screenshot = cv2.imread(screenshot_file_link)
+        heatmap = cv2.imread(heatmap_file_link)
+        template = cv2.imread(template_file_link)
+        
         screenshot = torch.from_numpy(screenshot).permute(2, 0, 1)
+        heatmap = torch.from_numpy(heatmap).permute(2, 0, 1)
         template = torch.from_numpy(template).permute(2, 0, 1)
-        box = torch.from_numpy(np.array(box)).unsqueeze(0)
-        return screenshot.float(), template.float(), box.float()
+        
+        # make the heatmap single channel
+        heatmap = heatmap.float().mean(dim=0).unsqueeze(0) / 255
+        
+        return screenshot.float()/255,  template.float()/255, heatmap
         
 if __name__ == "__main__":
     data_loader = DataLoader("data/training_data.npy", DataCreator("data/screenshots", "data/templates"))

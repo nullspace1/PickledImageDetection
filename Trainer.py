@@ -24,11 +24,11 @@ class Trainer():
         pbar = tqdm(self.data, desc=f'Epoch {epoch}')
         
         for batch in pbar:
-            images, templates, targets = batch
+            images, templates, heatmaps = batch
             
             self.optimizer.zero_grad()
             outputs = self.model(images, templates)
-            loss = self.model.loss(outputs, targets)
+            loss = self.model.loss(outputs, heatmaps)
             loss.backward()
             self.optimizer.step()
             
@@ -51,9 +51,9 @@ class Trainer():
         running_loss = 0.0
         pbar = tqdm(self.data, desc=f'Validation')
         for _, batch in enumerate(pbar):
-            images, templates, targets = batch  
+            images, templates, heatmaps = batch  
             outputs = self.model(images, templates)
-            loss = self.model.loss(outputs, targets)    
+            loss = self.model.loss(outputs, heatmaps)    
             running_loss += loss.item()
             pbar.set_postfix({'loss': f'{running_loss/len(self.data):.3f}'})    
         print(f'Validation loss: {running_loss / len(self.data):.3f}')
