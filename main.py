@@ -18,9 +18,9 @@ hypernetwork = HyperNetwork(image_processor, template_processor)
 
 
 ## Initialize the data
-data_creator = DataCreator("data/screenshots", "data/templates",batch_size=BATCH_SIZE,samples=SAMPLES)
-training_data_loader = DataLoader("data/training_data.npy", data_creator)
-validation_data_loader = DataLoader("data/validation_data.npy", data_creator)
+data_creator = DataCreator("data/screenshots", "data/templates",templates_per_screenshot=5,samples=SAMPLES)
+training_data_loader = DataLoader("data/training_data.npy", data_creator, batch_size=BATCH_SIZE)
+validation_data_loader = DataLoader("data/validation_data.npy", data_creator, batch_size=BATCH_SIZE)
 
 
 ## Initialize the trainer
