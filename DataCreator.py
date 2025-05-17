@@ -80,7 +80,7 @@ class DataCreator:
         np.save(data_save_path, data)
                 
 if __name__ == "__main__":
-    data_creator = DataCreator("data/screenshots", "data/templates",batch_size=1,samples=1)
+    data_creator = DataCreator("data/screenshots", "data/templates",templates_per_screenshot=5,samples=1)
     data_creator.create_data("data/training_data.npy")
     data = np.load("data/training_data.npy", allow_pickle=True)
     
