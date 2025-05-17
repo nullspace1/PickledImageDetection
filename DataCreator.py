@@ -12,13 +12,17 @@ class DataCreator:
         self.samples = samples
         self.generated_data_path = generated_data_path
         
-        # Create necessary directories
         os.makedirs(f"{self.generated_data_path}/screenshots", exist_ok=True)
         os.makedirs(f"{self.generated_data_path}/heatmaps", exist_ok=True)
         os.makedirs(f"{self.generated_data_path}/templates", exist_ok=True)
         
     def get_image(self, folder, path):
-        return cv2.imread(os.path.join(folder, path))
+        # check if the image is a folder, if it is, get a random image from the folder
+        if os.path.isdir(os.path.join(folder, path)):
+            images = os.listdir(os.path.join(folder, path))
+            return cv2.imread(os.path.join(folder, path, random.choice(images)))
+        else:
+            return cv2.imread(os.path.join(folder, path))
     
     def get_random_location(self, screenshot,templates, template):
         for n in range(100):
