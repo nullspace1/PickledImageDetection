@@ -4,11 +4,12 @@ import torch
 import cv2
 import random
 from DataCreator import DataCreator
-
+import time
 class DataLoader(torch.utils.data.Dataset):
-    def __init__(self, data_save_path, data_creator):
+    def __init__(self, data_save_path, data_creator, batch_size=1):
         self.data_save_path = data_save_path
         self.data_creator = data_creator
+        self.batch_size = batch_size
         self.load_data()
 
     def load_data(self):

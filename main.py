@@ -6,9 +6,9 @@ from DataLoader import DataLoader
 from DataCreator import DataCreator
 from Trainer import Trainer
 
-BATCH_SIZE = 1
-SAMPLES = 1
-EPOCHS = 1
+BATCH_SIZE = 5
+SAMPLES = 5
+EPOCHS = 5
 
 
 ## Initialize the model
