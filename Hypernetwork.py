@@ -23,8 +23,8 @@ class HyperNetwork(torch.nn.Module):
         )
         self.sigmoid = torch.nn.Sigmoid()
 
-    # image is (B,512,W,H)
-    # template is (B,K,512,3,3)
+    # image is (B,1280,W,H)
+    # template is (B,K,1280,3,3)
     def forward(self, image, template):
         
         if image.dim() == 3:
@@ -75,7 +75,7 @@ class HyperNetwork(torch.nn.Module):
         
 if __name__ == "__main__":
     image_processor = ImageProcessor()
-    template_processor = TemplateProcessor(1000)
+    template_processor = TemplateProcessor(300)
     hypernetwork = HyperNetwork(image_processor, template_processor)
     result = hypernetwork.test()
     print(result.shape)
@@ -85,6 +85,6 @@ if __name__ == "__main__":
     cv2.imshow("Result", result)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
-    print(f"Parameter count: {hypernetwork.parameter_count()}")
+    print(f"Parameter count for Hypernetwork: {hypernetwork.parameter_count()}")
 
 

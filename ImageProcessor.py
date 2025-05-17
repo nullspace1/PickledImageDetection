@@ -1,20 +1,22 @@
 import torch
+import timm
 
 class ImageProcessor(torch.nn.Module):
     
     def __init__(self):
         super(ImageProcessor, self).__init__()
-        self.vgg = torch.hub.load('pytorch/vision:v0.10.0', 'vgg11', pretrained=True).features
-
+        self.efficientnet = timm.create_model('efficientnet_b0', pretrained=True, features_only=True)
     def forward(self, x):
-        return self.vgg(x)
+        return self.efficientnet(x)[-1]
 
     def parameter_count(self):
         return sum(p.numel() for p in self.parameters())
 
     def test(self):
-        x = torch.randn(1, 3, 1920, 1080)
-        print(self(x).shape)
+        x = torch.randn(1, 3, 1200, 1200)
+        out = self.forward(x)
+        print(f"Output shape for Image Processor: {out.shape}")
+        print(f"Parameter count for Image Processor: {self.parameter_count():,}")
 
 if __name__ == "__main__":
     image_processor = ImageProcessor()

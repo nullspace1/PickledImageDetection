@@ -18,11 +18,24 @@ class DataCreator:
         os.makedirs(f"{self.generated_data_path}/templates", exist_ok=True)
         
     def get_image(self, folder, path):
-        if os.path.isdir(os.path.join(folder, path)):
-            images = [f for f in os.listdir(os.path.join(folder, path)) if f.endswith(('.png', '.jpg', '.jpeg', '.bmp', '.tiff'))]  
-            return cv2.imread(os.path.join(folder, path, random.choice(images)))
-        else:
-            return cv2.imread(os.path.join(folder, path))
+        try:
+            if os.path.isdir(os.path.join(folder, path)) and any(f.endswith(('.png', '.jpg', '.jpeg', '.bmp', '.tiff')) for f in os.listdir(os.path.join(folder, path))):
+                images = [f for f in os.listdir(os.path.join(folder, path)) if f.endswith(('.png', '.jpg', '.jpeg', '.bmp', '.tiff'))]  
+                if not images:
+                    raise ValueError(f"No valid images found in {os.path.join(folder, path)}")
+                img = cv2.imread(os.path.join(folder, path, random.choice(images)))
+            else:
+                img = cv2.imread(os.path.join(folder, path))
+            
+            if img is None:
+                raise ValueError(f"Failed to load image from {os.path.join(folder, path)}")
+                
+            return img
+            
+        except Exception as e:
+            print(f"Error loading image: {str(e)}")
+            # Return a default image or raise an error
+            raise ValueError(f"Could not load image from {os.path.join(folder, path)}: {str(e)}")
     
     def get_random_location(self, screenshot,templates, template):
         for n in range(100):

@@ -7,8 +7,8 @@ from DataCreator import DataCreator
 from Trainer import Trainer
 
 BATCH_SIZE = 1
-SAMPLES = 1
-EPOCHS = 1
+SAMPLES = 1000
+EPOCHS = 10
 
 ## Initialize the model
 image_processor = ImageProcessor()
@@ -17,7 +17,7 @@ hypernetwork = HyperNetwork(image_processor, template_processor)
 
 
 ## Initialize the data
-data_creator = DataCreator("data/screenshots", "data/templates",templates_per_screenshot=5,samples=SAMPLES)
+data_creator = DataCreator("data/screenshots", "data/templates",templates_per_screenshot=1,samples=SAMPLES)
 training_data_loader = DataLoader("data/training_data.npy", data_creator, batch_size=BATCH_SIZE)
 validation_data_loader = DataLoader("data/validation_data.npy", data_creator, batch_size=BATCH_SIZE)
 

@@ -1,38 +1,38 @@
 import torch
+import timm
+import torch.nn as nn
+import torch.nn.functional as F
 
-class TemplateProcessor(torch.nn.Module):
-    
-    def __init__(self, intermediate_size, reduced_channels=512, final_kernel_channels = 3):
-        super(TemplateProcessor, self).__init__()
-        self.reduced_channels = reduced_channels
-        self.vgg = torch.hub.load('pytorch/vision:v0.10.0', 'vgg11', pretrained=True).features
-        self.channel_reduction = torch.nn.Conv2d(512, reduced_channels, kernel_size=1)
-        self.linear = torch.nn.Linear(reduced_channels * 32 * 32, intermediate_size)
-        self.linear2 = torch.nn.Linear(intermediate_size, reduced_channels * 3 * 3 * final_kernel_channels)
+class TemplateProcessor(nn.Module):
+    def __init__(self, intermediate_size, final_kernel_channels=3):
+        super().__init__()
         self.final_kernel_channels = final_kernel_channels
-        
+        self.efficientnet = timm.create_model('efficientnet_b0', pretrained=True, features_only=True)
+
+        # Efficientnet[-1] output is (B, 320, H, W)
+        self.pool = nn.AdaptiveAvgPool2d((1, 1))         # (B, 320, 1, 1)
+        self.linear1 = nn.Linear(320, intermediate_size)
+        self.linear2 = nn.Linear(intermediate_size, final_kernel_channels * 320 * 3 * 3)
+
     def forward(self, x):
-        if (x.shape[2] < 32 or x.shape[3] < 32):
-            x = torch.nn.functional.interpolate(x, size=(32, 32), mode='bilinear', align_corners=False)
-        output = self.vgg(x)
-        output = torch.nn.functional.adaptive_avg_pool2d(output, (32, 32))
-        output = self.channel_reduction(output)
-        output = output.view(output.size(0), -1)
-        output = self.linear(output)
-        output = self.linear2(output)
-        output = output.view(output.size(0), self.final_kernel_channels, self.reduced_channels, 3, 3)
-        return output
-    
+        if x.shape[2] < 256 or x.shape[3] < 256:
+            x = F.interpolate(x, size=(256, 256), mode='bilinear', align_corners=False)
+
+        features = self.efficientnet(x)[-1]              # (B, 320, H, W)
+        pooled = self.pool(features).view(features.size(0), -1)  # (B, 320)
+        x = self.linear1(pooled)                         # (B, intermediate_size)
+        x = self.linear2(x)                              # (B, C*K*K*F)
+        x = x.view(x.size(0), self.final_kernel_channels, 320, 3, 3)
+        return x
+
     def test(self):
         x = torch.randn(1, 3, 1200, 1200)
-        x = self.forward(x)
-        print(x.shape)
-        
+        out = self.forward(x)
+        print(f"Output shape for Template Processor: {out.shape}")
+        print(f"Parameter count for Template Processor: {self.parameter_count():,}")
+
     def parameter_count(self):
         return sum(p.numel() for p in self.parameters())
 
 if __name__ == "__main__":
-    template_processor = TemplateProcessor(1000, 64, 3)
-    template_processor.test()
-    print(f"Parameter count: {template_processor.parameter_count()}")
-    print(f"Parameter count: {template_processor.parameter_count()}")
+    TemplateProcessor(300).test()
