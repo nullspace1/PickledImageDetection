@@ -1,10 +1,9 @@
-import convnd.convNd
 import torch
 import cv2
 import numpy as np
 from ImageProcessor import ImageProcessor
 from TemplateProcessor import TemplateProcessor
-import convnd
+
 
 class HyperNetwork(torch.nn.Module):
     

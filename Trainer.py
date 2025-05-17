@@ -1,12 +1,24 @@
 import torch
 from tqdm import tqdm
 import os
+import logging
+import traceback
 
 from Hypernetwork import HyperNetwork
 from ImageProcessor import ImageProcessor
 from DataLoader import DataLoader
 from DataCreator import DataCreator
 from TemplateProcessor import TemplateProcessor
+
+# Set up logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('training.log'),
+        logging.StreamHandler()
+    ]
+)
 
 class Trainer():
     def __init__(self, model, dataloader, optimizer : torch.optim.Optimizer, model_path):
@@ -24,17 +36,25 @@ class Trainer():
         pbar = tqdm(self.data, desc=f'Epoch {epoch}')
         
         for batch in pbar:
-            images, templates, heatmaps = batch
-            
-            self.optimizer.zero_grad()
-            outputs = self.model(images, templates)
-            loss = self.model.loss(outputs, heatmaps)
-            loss.backward()
-            self.optimizer.step()
-            
-            running_loss += loss.item()
-            pbar.set_postfix({'loss': f'{running_loss/len(self.data):.3f}'})
+            try:
+                images, templates, heatmaps = batch
                 
+                self.optimizer.zero_grad()
+                outputs = self.model(images, templates)
+                loss = self.model.loss(outputs, heatmaps)
+                loss.backward()
+                self.optimizer.step()
+                
+                running_loss += loss.item()
+                pbar.set_postfix({'loss': f'{running_loss/len(self.data):.3f}'})
+                
+            except Exception as e:
+                logging.error(f"Error in training batch: {str(e)}")
+                logging.error(f"Batch shapes - Images: {images.shape if 'images' in locals() else 'N/A'}, "
+                            f"Templates: {templates.shape if 'templates' in locals() else 'N/A'}, "
+                            f"Heatmaps: {heatmaps.shape if 'heatmaps' in locals() else 'N/A'}")
+                logging.error(traceback.format_exc())
+                continue
 
         if running_loss < self.best_loss:
             self.best_loss = running_loss

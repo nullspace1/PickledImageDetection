@@ -12,6 +12,8 @@ class TemplateProcessor(torch.nn.Module):
         self.final_kernel_channels = final_kernel_channels
         
     def forward(self, x):
+        if (x.shape[2] < 32 or x.shape[3] < 32):
+            x = torch.nn.functional.interpolate(x, size=(32, 32), mode='bilinear', align_corners=False)
         output = self.vgg(x)
         output = torch.nn.functional.adaptive_avg_pool2d(output, (32, 32))
         output = self.channel_reduction(output)
@@ -32,4 +34,5 @@ class TemplateProcessor(torch.nn.Module):
 if __name__ == "__main__":
     template_processor = TemplateProcessor(1000, 64, 3)
     template_processor.test()
+    print(f"Parameter count: {template_processor.parameter_count()}")
     print(f"Parameter count: {template_processor.parameter_count()}")
