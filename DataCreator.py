@@ -18,8 +18,9 @@ class DataCreator:
         
     def get_image(self, folder, path):
         # check if the image is a folder, if it is, get a random image from the folder
+        # filter out files that are not images
         if os.path.isdir(os.path.join(folder, path)):
-            images = os.listdir(os.path.join(folder, path))
+            images = [f for f in os.listdir(os.path.join(folder, path)) if f.endswith(('.png', '.jpg', '.jpeg', '.bmp', '.tiff'))]  
             return cv2.imread(os.path.join(folder, path, random.choice(images)))
         else:
             return cv2.imread(os.path.join(folder, path))
