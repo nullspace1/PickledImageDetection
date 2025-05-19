@@ -70,6 +70,8 @@ class DataCreator:
                     box = (gen_box[0], gen_box[1], distored_template.shape[1], distored_template.shape[0])
                     
                     screenshot = self.put_template_on_screenshot(screenshot,distored_template,box)
+                    
+                    templates[i] = (distored_template, box)
             
             template, box = random.choice([(template, box) for template, box in templates if box != (-1, -1, -1, -1)])
                             
