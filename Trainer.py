@@ -3,6 +3,8 @@ from tqdm import tqdm
 import os
 import logging
 import traceback
+import matplotlib.pyplot as plt
+import numpy as np
 
 from Hypernetwork import HyperNetwork
 from ImageProcessor import ImageProcessor
@@ -30,6 +32,8 @@ class Trainer():
         self.optimizer = optimizer
         self.data = dataloader
         self.best_loss = float('inf')
+        self.train_losses = []
+        self.val_losses = []
         
     def train_epoch(self,epoch):
         running_loss = 0.0
@@ -48,6 +52,8 @@ class Trainer():
                 running_loss += loss.item()
                 pbar.set_postfix({'loss': f'{running_loss/len(self.data):.3f}'})
                 
+                del images, templates, heatmaps
+                
             except Exception as e:
                 logging.error(f"Error in training batch: {str(e)}")
                 logging.error(f"Batch shapes - Images: {images.shape if 'images' in locals() else 'N/A'}, "
@@ -56,6 +62,9 @@ class Trainer():
                 logging.error(traceback.format_exc())
                 continue
 
+        epoch_loss = running_loss / len(self.data)
+        self.train_losses.append(epoch_loss)
+        
         if running_loss < self.best_loss:
             self.best_loss = running_loss
             torch.save(self.model.state_dict(), self.model_path)
@@ -64,7 +73,7 @@ class Trainer():
         for epoch in range(epochs):
             self.train_epoch(epoch)
             self.validate(epoch)
-        
+            self.plot_losses()
         
     def validate(self,epoch):
         self.model.eval()
@@ -76,7 +85,21 @@ class Trainer():
             loss = self.model.loss(outputs, heatmaps)    
             running_loss += loss.item()
             pbar.set_postfix({'loss': f'{running_loss/len(self.data):.3f}'})    
-        print(f'Validation loss: {running_loss / len(self.data):.3f}')
+        val_loss = running_loss / len(self.data)
+        self.val_losses.append(val_loss)
+        print(f'Validation loss: {val_loss:.3f}')
+        
+    def plot_losses(self):
+        plt.figure(figsize=(10, 5))
+        plt.plot(self.train_losses, label='Training Loss')
+        plt.plot(self.val_losses, label='Validation Loss')
+        plt.xlabel('Epoch')
+        plt.ylabel('Loss')
+        plt.title('Training and Validation Losses')
+        plt.legend()
+        plt.grid(True)
+        plt.savefig('data/loss_plot.png')
+        plt.close()
         
     def test(self):
         screenshot, template = torch.randn(1, 3, 1080, 1920), torch.randn(1, 3, 100,100)

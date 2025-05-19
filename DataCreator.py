@@ -27,10 +27,12 @@ class DataCreator:
                         file_list.append(full_path)
         return file_list
         
-    def get_image(self, folder, path):
-        return cv2.imread(os.path.join(folder, path))
+    def get_image(self, path):
+        return cv2.imread(path)
       
     def get_random_location(self, screenshot,templates, template):
+        if screenshot.shape[0] < template.shape[0] or screenshot.shape[1] < template.shape[1]:
+            return None
         for n in range(100):
             x = random.randint(0, screenshot.shape[1] - int(template.shape[1] * 1.2))
             y = random.randint(0, screenshot.shape[0] - int(template.shape[0] * 1.2))
@@ -54,10 +56,12 @@ class DataCreator:
         templates_names = self.scan_files(self.templates_path)
         data = []
         for _ in tqdm(range(self.samples), desc="Generating data"):
-            screenshot = self.get_image(self.screenshots_path, random.choice(screenshots_names))
-            templates = [(self.get_image(self.templates_path, random.choice(templates_names)), (-1, -1,-1,-1)) for _ in range(self.templates_per_screenshot)]
+            screenshot = self.get_image(random.choice(screenshots_names))
+            templates = [(self.get_image(random.choice(templates_names)), (-1, -1,-1,-1)) for _ in range(self.templates_per_screenshot)]
+            
             for i, (template,  box) in enumerate(templates):
                 gen_box = self.get_random_location(screenshot,templates,template)
+                
                 if gen_box is not None:
                     
                     distortion_x, distortion_y = random.uniform(0.8, 1.2), random.uniform(0.8, 1.2)
@@ -66,20 +70,21 @@ class DataCreator:
                     box = (gen_box[0], gen_box[1], distored_template.shape[1], distored_template.shape[0])
                     
                     screenshot = self.put_template_on_screenshot(screenshot,distored_template,box)
-                    templates[i] = (template, box)
+            
+            template, box = random.choice([(template, box) for template, box in templates if box != (-1, -1, -1, -1)])
                             
-                    heatmap = np.zeros((screenshot.shape[0], screenshot.shape[1]))
-                    heatmap[box[1]:box[1] + template.shape[0], box[0]:box[0] + template.shape[1]] = 255
-                    
-                    path_screenshot = f"{self.generated_data_path}/screenshots/screenshot_{random.randint(0, 1000000)}.jpg"
-                    path_heatmap = f"{self.generated_data_path}/heatmaps/heatmap_{random.randint(0, 1000000)}.png"
-                    path_template = f"{self.generated_data_path}/templates/template_{random.randint(0, 1000000)}.jpg"
-          
-                    cv2.imwrite(path_screenshot, screenshot)
-                    cv2.imwrite(path_heatmap, heatmap)
-                    cv2.imwrite(path_template, template)
-                    
-                    data.append((path_screenshot,path_heatmap, path_template))
+            heatmap = np.zeros((screenshot.shape[0], screenshot.shape[1]))
+            heatmap[box[1]:box[1] + template.shape[0], box[0]:box[0] + template.shape[1]] = 255
+            
+            path_screenshot = f"{self.generated_data_path}/screenshots/screenshot_{random.randint(0, 1000000)}.jpg"
+            path_heatmap = f"{self.generated_data_path}/heatmaps/heatmap_{random.randint(0, 1000000)}.png"
+            path_template = f"{self.generated_data_path}/templates/template_{random.randint(0, 1000000)}.jpg"
+    
+            cv2.imwrite(path_screenshot, screenshot)
+            cv2.imwrite(path_heatmap, heatmap)
+            cv2.imwrite(path_template, template)
+            
+            data.append((path_screenshot,path_heatmap, path_template))
                     
         data = np.array(data, dtype=object)
         np.save(data_save_path, data)
