@@ -12,7 +12,9 @@ class TemplateProcessor(nn.Module):
         # Efficientnet[-1] output is (B, 320, H, W)
         self.pool = nn.AdaptiveAvgPool2d((1, 1))         # (B, 320, 1, 1)
         self.linear1 = nn.Linear(320, intermediate_size)
+        self.relu_1 = nn.ReLU()
         self.linear2 = nn.Linear(intermediate_size, final_kernel_channels * 320 * 3 * 3)
+        self.relu_2 = nn.ReLU()
 
     def forward(self, x):
         if x.shape[2] < 256 or x.shape[3] < 256:
@@ -20,8 +22,8 @@ class TemplateProcessor(nn.Module):
 
         features = self.efficientnet(x)[-1]              # (B, 320, H, W)
         pooled = self.pool(features).view(features.size(0), -1)  # (B, 320)
-        x = self.linear1(pooled)                         # (B, intermediate_size)
-        x = self.linear2(x)                              # (B, C*K*K*F)
+        x = self.relu_1(self.linear1(pooled))                         # (B, intermediate_size)
+        x = self.relu_2(self.linear2(x))                              # (B, C*K*K*F)
         x = x.view(x.size(0), self.final_kernel_channels, 320, 3, 3)
         return x
 
