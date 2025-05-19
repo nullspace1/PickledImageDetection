@@ -18,12 +18,14 @@ class DataCreator:
         os.makedirs(f"{self.generated_data_path}/templates", exist_ok=True)
         
     def scan_files(self, folder):
-        files = []
+        file_list = []
         for root, dirs, files in os.walk(folder):
             for file in files:
                 if file.endswith(('.png', '.jpg', '.jpeg', '.bmp', '.tiff')):
-                    files.append(os.path.join(root, file))
-        return files
+                    full_path = os.path.join(root, file)
+                    if os.path.exists(full_path):
+                        file_list.append(full_path)
+        return file_list
         
     def get_image(self, folder, path):
         return cv2.imread(os.path.join(folder, path))
@@ -48,7 +50,6 @@ class DataCreator:
         return screenshot
 
     def create_data(self, data_save_path):
-        ## add a loading bar
         screenshots_names = self.scan_files(self.screenshots_path)
         templates_names = self.scan_files(self.templates_path)
         data = []
