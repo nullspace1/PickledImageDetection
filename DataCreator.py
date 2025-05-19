@@ -17,26 +17,17 @@ class DataCreator:
         os.makedirs(f"{self.generated_data_path}/heatmaps", exist_ok=True)
         os.makedirs(f"{self.generated_data_path}/templates", exist_ok=True)
         
+    def scan_files(self, folder):
+        files = []
+        for root, dirs, files in os.walk(folder):
+            for file in files:
+                if file.endswith(('.png', '.jpg', '.jpeg', '.bmp', '.tiff')):
+                    files.append(os.path.join(root, file))
+        return files
+        
     def get_image(self, folder, path):
-        try:
-            if os.path.isdir(os.path.join(folder, path)) and any(f.endswith(('.png', '.jpg', '.jpeg', '.bmp', '.tiff')) for f in os.listdir(os.path.join(folder, path))):
-                images = [f for f in os.listdir(os.path.join(folder, path)) if f.endswith(('.png', '.jpg', '.jpeg', '.bmp', '.tiff'))]  
-                if not images:
-                    raise ValueError(f"No valid images found in {os.path.join(folder, path)}")
-                img = cv2.imread(os.path.join(folder, path, random.choice(images)))
-            else:
-                img = cv2.imread(os.path.join(folder, path))
-            
-            if img is None:
-                raise ValueError(f"Failed to load image from {os.path.join(folder, path)}")
-                
-            return img
-            
-        except Exception as e:
-            print(f"Error loading image: {str(e)}")
-            # Return a default image or raise an error
-            raise ValueError(f"Could not load image from {os.path.join(folder, path)}: {str(e)}")
-    
+        return cv2.imread(os.path.join(folder, path))
+      
     def get_random_location(self, screenshot,templates, template):
         for n in range(100):
             x = random.randint(0, screenshot.shape[1] - int(template.shape[1] * 1.2))
@@ -58,8 +49,8 @@ class DataCreator:
 
     def create_data(self, data_save_path):
         ## add a loading bar
-        screenshots_names = [f for f in os.listdir(self.screenshots_path) if not f.startswith('.')]
-        templates_names = [f for f in os.listdir(self.templates_path) if not f.startswith('.')]
+        screenshots_names = self.scan_files(self.screenshots_path)
+        templates_names = self.scan_files(self.templates_path)
         data = []
         for _ in tqdm(range(self.samples), desc="Generating data"):
             screenshot = self.get_image(self.screenshots_path, random.choice(screenshots_names))
