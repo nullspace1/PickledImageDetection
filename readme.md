@@ -45,7 +45,6 @@ python main.py --batch_size 1 --samples 1000 --epochs 10 --model_path "data/mode
 - `--samples`: Number of training samples to generate (default: 1000)
 - `--epochs`: Number of training epochs (default: 10)
 - `--model_path`: Path to save/load the model (default: "data/model.pth")
-- `--cache_size`: Size of the data loader cache (default: 1000)
 - `--generated_data_path`: Path for generated training data (default: "data/generated_data")
 - `--screenshots_path`: Path to screenshot images (default: "data/screenshots")
 - `--templates_path`: Path to template images (default: "data/templates")

@@ -26,9 +26,12 @@ class DataLoader(torch.utils.data.Dataset):
     
     def __getitem__(self, index):
         screenshot_file_link, heatmap_file_link, template_file_link  = self.data[index]
-        screenshot = torch.load(screenshot_file_link)
-        heatmap = torch.load(heatmap_file_link)
-        template = torch.load(template_file_link)
+        screenshot = cv2.imread(screenshot_file_link)
+        heatmap = cv2.imread(heatmap_file_link)
+        template = cv2.imread(template_file_link)
+        screenshot = torch.from_numpy(screenshot).float().permute(2, 0, 1)  / 255
+        template = torch.from_numpy(template).float().permute(2, 0, 1) / 255
+        heatmap = torch.from_numpy(heatmap).float().permute(2, 0, 1).mean(dim=0).unsqueeze(0) / 255
         return screenshot,  template, heatmap
 
     

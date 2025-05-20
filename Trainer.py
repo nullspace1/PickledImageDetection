@@ -26,7 +26,7 @@ class Trainer():
     def __init__(self, model, dataloader, optimizer : torch.optim.Optimizer, model_path, patience = 10):
         super(Trainer, self).__init__()
         self.model = model
-        self.model_path = model_path
+        self.model_path = model_path[:-4] + "_" + self.model.template_processor.hash + ".pth"
 
         if self.is_compatible(model_path):
             self.model.load_state_dict(torch.load(model_path))
@@ -58,9 +58,9 @@ class Trainer():
                 
                 # idk why the images and heatmaps have different sizes
                 # so we need to interpolate the heatmaps to the same size as the outputs
-                # TODO :: fix this
-                if outputs.shape[2] != heatmaps.shape[2] or outputs.shape[3] != heatmaps.shape[3]:
-                    heatmaps = F.interpolate(heatmaps, size=(outputs.shape[2], outputs.shape[3]), mode='bilinear', align_corners=False)
+                # TODO :: fix this        
+                if outputs.shape[1] != heatmaps.shape[1] or outputs.shape[2] != heatmaps.shape[2]:
+                    heatmaps = F.interpolate(heatmaps, size=(outputs.shape[1], outputs.shape[2]), mode='bilinear', align_corners=False)
                 
                 loss = self.model.loss(outputs, heatmaps)
                 loss.backward()

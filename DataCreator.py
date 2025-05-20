@@ -84,16 +84,11 @@ class DataCreator:
         path_screenshot = f"{self.generated_data_path}/screenshots/screenshot_{random.randint(0, 1000000)}.jpg"
         path_heatmap = f"{self.generated_data_path}/heatmaps/heatmap_{random.randint(0, 1000000)}.png"
         path_template = f"{self.generated_data_path}/templates/template_{random.randint(0, 1000000)}.jpg"
-        torch.save(screenshot, path_screenshot)
-        torch.save(heatmap, path_heatmap)
-        torch.save(template, path_template)
+        cv2.imwrite(path_screenshot, screenshot)
+        cv2.imwrite(path_heatmap, heatmap)
+        cv2.imwrite(path_template, template)
         return path_screenshot, path_heatmap, path_template
 
-    def preprocess(self, screenshot, heatmap, template):
-        screenshot = torch.from_numpy(screenshot).float().permute(2, 0, 1)  / 255
-        heatmap = torch.from_numpy(heatmap).float().permute(2, 0, 1).mean(dim=0).unsqueeze(0)  / 255
-        template = torch.from_numpy(template).float().permute(2, 0, 1) / 255
-        return screenshot, template, heatmap
     
     def create_data(self, data_save_path):
         
@@ -112,8 +107,6 @@ class DataCreator:
             
             template, box = random.choice([(template, box) for template, box in templates if box != (-1, -1, -1, -1)])
             heatmap = self.create_heatmap(screenshot, template, box)
-            
-            screenshot, heatmap, template = self.preprocess(screenshot, heatmap, template)
             
             path_screenshot, path_heatmap, path_template = self.save_data(screenshot, heatmap, template)
             
