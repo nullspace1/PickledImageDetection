@@ -11,13 +11,3 @@ class ImageProcessor(torch.nn.Module):
 
     def parameter_count(self):
         return sum(p.numel() for p in self.parameters())
-
-    def test(self):
-        x = torch.randn(1, 3, 1200, 1200)
-        out = self.forward(x)
-        print(f"Output shape for Image Processor: {out.shape}")
-        print(f"Parameter count for Image Processor: {self.parameter_count():,}")
-
-if __name__ == "__main__":
-    image_processor = ImageProcessor()
-    image_processor.test()

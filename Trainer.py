@@ -11,6 +11,7 @@ from ImageProcessor import ImageProcessor
 from DataLoader import DataLoader
 from DataCreator import DataCreator
 from TemplateProcessor import TemplateProcessor
+import torch.nn.functional as F
 
 # Set up logging
 logging.basicConfig(
@@ -23,18 +24,28 @@ logging.basicConfig(
 )
 
 class Trainer():
-    def __init__(self, model, dataloader, optimizer : torch.optim.Optimizer, model_path):
+    def __init__(self, model, dataloader, optimizer : torch.optim.Optimizer, model_path, patience = 10):
         super(Trainer, self).__init__()
         self.model = model
         self.model_path = model_path
-        if os.path.exists(model_path):
+
+        if self.is_compatible(model_path):
             self.model.load_state_dict(torch.load(model_path))
+        else:
+            logging.info(f"No model found at {model_path}, creating new model")
+            
         self.optimizer = optimizer
         self.data = dataloader
         self.best_loss = float('inf')
         self.train_losses = []
         self.val_losses = []
+        self.patience = patience
+        self.best_loss = float('inf')
+        self.best_loss_epoch = 0
         
+    def is_compatible(self, model_path):
+        return os.path.exists(model_path) and model_path[:-4].endswith(self.model.template_processor.hash) and model_path[-4:] == ".pth"
+
     def train_epoch(self,epoch):
         running_loss = 0.0
         pbar = tqdm(self.data, desc=f'Epoch {epoch}')
@@ -45,6 +56,10 @@ class Trainer():
                 
                 self.optimizer.zero_grad()
                 outputs = self.model(images, templates)
+                
+                if outputs.shape[2] != heatmaps.shape[2] or outputs.shape[3] != heatmaps.shape[3]:
+                    heatmaps = F.interpolate(heatmaps, size=(outputs.shape[2], outputs.shape[3]), mode='bilinear', align_corners=False)
+                
                 loss = self.model.loss(outputs, heatmaps)
                 loss.backward()
                 self.optimizer.step()
@@ -67,6 +82,7 @@ class Trainer():
         
         if running_loss < self.best_loss:
             self.best_loss = running_loss
+            self.best_loss_epoch = epoch
             torch.save(self.model.state_dict(), self.model_path)
             
     def train(self,epochs):
@@ -74,6 +90,9 @@ class Trainer():
             self.train_epoch(epoch)
             self.validate(epoch)
             self.plot_losses()
+            if epoch - self.best_loss_epoch > self.patience:
+                logging.info(f"Early stopping triggered at epoch {epoch}")
+                break
         
     def validate(self,epoch):
         self.model.eval()
@@ -101,20 +120,3 @@ class Trainer():
         plt.savefig('data/loss_plot.png')
         plt.close()
         
-    def test(self):
-        screenshot, template = torch.randn(1, 3, 1080, 1920), torch.randn(1, 3, 100,100)
-        output = self.model(screenshot, template)
-        
-if __name__ == "__main__":
-    model = HyperNetwork(
-            image_processor=ImageProcessor(),
-            template_processor=TemplateProcessor(1000))
-    trainer = Trainer(
-        model=model,
-        dataloader=DataLoader("data/training_data.npy", DataCreator("data/screenshots", "data/templates")),
-        optimizer=torch.optim.Adam(model.parameters(), lr=0.001),
-        model_path="data/model.pth"
-    )
-    trainer.test()
-        
-    

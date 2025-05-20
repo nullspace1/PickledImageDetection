@@ -23,8 +23,6 @@ class HyperNetwork(torch.nn.Module):
         )
         self.sigmoid = torch.nn.Sigmoid()
 
-    # image is (B,1280,W,H)
-    # template is (B,K,1280,3,3)
     def forward(self, image, template):
         
         if image.dim() == 3:
@@ -62,29 +60,3 @@ class HyperNetwork(torch.nn.Module):
         heatmap = torch.clamp(heatmap, eps, 1.0 - eps)
         return torch.nn.functional.binary_cross_entropy(heatmap, real_heatmap)
         
-    def test(self):
-        self.image_processor.test()
-        self.template_processor.test()
-        image = torch.randn(1, 3, 1920, 1080)
-        template = torch.randn(1, 3, 120, 40)
-        output = self.forward(image, template)
-        return output
-        
-    def parameter_count(self):
-        return sum(p.numel() for p in self.parameters())
-        
-if __name__ == "__main__":
-    image_processor = ImageProcessor()
-    template_processor = TemplateProcessor(300)
-    hypernetwork = HyperNetwork(image_processor, template_processor)
-    result = hypernetwork.test()
-    print(result.shape)
-    # reduce to the first batch
-    result = result[0]
-    result = (result.squeeze().detach().cpu().numpy() * 255).astype(np.uint8)
-    cv2.imshow("Result", result)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
-    print(f"Parameter count for Hypernetwork: {hypernetwork.parameter_count()}")
-
-
