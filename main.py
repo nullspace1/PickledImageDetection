@@ -15,6 +15,11 @@ parser.add_argument('--samples', type=int, default=1000, help='Number of samples
 parser.add_argument('--epochs', type=int, default=10, help='Number of epochs to train')
 parser.add_argument('--model_path', type=str, default="data/model.pth", help='Path to the model')
 parser.add_argument('--cache_size', type=int, default=1000, help='Cache size for the data loader')
+parser.add_argument('--generated_data_path', type=str, default="data/generated_data", help='Path to the generated data')
+parser.add_argument('--screenshots_path', type=str, default="data/screenshots", help='Path to the screenshots')
+parser.add_argument('--templates_path', type=str, default="data/templates", help='Path to the templates')
+parser.add_argument('--training_data_path', type=str, default="data/training_data.npy", help='Path to the training data')
+parser.add_argument('--validation_data_path', type=str, default="data/validation_data.npy", help='Path to the validation data')
 
 args = parser.parse_args()
 
@@ -22,9 +27,9 @@ image_processor = ImageProcessor()
 template_processor = TemplateProcessor(1000)
 hypernetwork = HyperNetwork(image_processor, template_processor)
 
-data_creator = DataCreator("data/screenshots", "data/templates", templates_per_screenshot=10, samples=args.samples)
-training_data_loader = DataLoader("data/training_data.npy", data_creator, Cache(args.cache_size), batch_size=args.batch_size)
-validation_data_loader = DataLoader("data/validation_data.npy", data_creator, Cache(args.cache_size), batch_size=args.batch_size)
+data_creator = DataCreator(args.screenshots_path, args.templates_path, args.generated_data_path, templates_per_screenshot=10, samples=args.samples)
+training_data_loader = DataLoader(args.training_data_path, data_creator, Cache(args.cache_size), batch_size=args.batch_size)
+validation_data_loader = DataLoader(args.validation_data_path, data_creator, Cache(args.cache_size), batch_size=args.batch_size)
 
 trainer = Trainer(hypernetwork, training_data_loader, torch.optim.Adam(hypernetwork.parameters(), lr=0.001), args.model_path)
 

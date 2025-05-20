@@ -13,7 +13,6 @@ from DataCreator import DataCreator
 from TemplateProcessor import TemplateProcessor
 import torch.nn.functional as F
 
-# Set up logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
@@ -57,6 +56,9 @@ class Trainer():
                 self.optimizer.zero_grad()
                 outputs = self.model(images, templates)
                 
+                # idk why the images and heatmaps have different sizes
+                # so we need to interpolate the heatmaps to the same size as the outputs
+                # TODO :: fix this
                 if outputs.shape[2] != heatmaps.shape[2] or outputs.shape[3] != heatmaps.shape[3]:
                     heatmaps = F.interpolate(heatmaps, size=(outputs.shape[2], outputs.shape[3]), mode='bilinear', align_corners=False)
                 
@@ -106,7 +108,7 @@ class Trainer():
             pbar.set_postfix({'loss': f'{running_loss/len(self.data):.3f}'})    
         val_loss = running_loss / len(self.data)
         self.val_losses.append(val_loss)
-        print(f'Validation loss: {val_loss:.3f}')
+        print(f'Validation loss at epoch {epoch} : {val_loss:.3f}')
         
     def plot_losses(self):
         plt.figure(figsize=(10, 5))

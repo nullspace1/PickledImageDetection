@@ -7,7 +7,7 @@ from tqdm import tqdm
 
 class DataCreator:
     
-    def __init__(self, screenshots_path, templates_path, templates_per_screenshot = 10, samples = 10000, generated_data_path = "data/generated_data"):
+    def __init__(self, screenshots_path, templates_path,generated_data_path, templates_per_screenshot = 10, samples = 10000):
         self.screenshots_path = screenshots_path
         self.templates_path = templates_path
         self.templates_per_screenshot = templates_per_screenshot
@@ -121,13 +121,4 @@ class DataCreator:
                     
         data = np.array(data, dtype=object)
         np.save(data_save_path, data)
-                
-if __name__ == "__main__":
-    data_creator = DataCreator("data/screenshots", "data/templates",templates_per_screenshot=5,samples=1)
-    data_creator.create_data("data/training_data.npy")
-    data = np.load("data/training_data.npy", allow_pickle=True)
-    
-    
-    screenshot = data[0][0]
-    
-    print(screenshot)
+            
