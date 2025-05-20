@@ -5,7 +5,6 @@ from TemplateProcessor import TemplateProcessor
 from DataLoader import DataLoader
 from DataCreator import DataCreator
 from Trainer import Trainer
-from DataLoader import Cache
 
 import argparse
 
@@ -28,8 +27,8 @@ template_processor = TemplateProcessor(1000)
 hypernetwork = HyperNetwork(image_processor, template_processor)
 
 data_creator = DataCreator(args.screenshots_path, args.templates_path, args.generated_data_path, templates_per_screenshot=10, samples=args.samples)
-training_data_loader = DataLoader(args.training_data_path, data_creator, Cache(args.cache_size), batch_size=args.batch_size)
-validation_data_loader = DataLoader(args.validation_data_path, data_creator, Cache(args.cache_size), batch_size=args.batch_size)
+training_data_loader = DataLoader(args.training_data_path, data_creator, batch_size=args.batch_size)
+validation_data_loader = DataLoader(args.validation_data_path, data_creator, batch_size=args.batch_size)
 
 trainer = Trainer(hypernetwork, training_data_loader, torch.optim.Adam(hypernetwork.parameters(), lr=0.001), args.model_path)
 
