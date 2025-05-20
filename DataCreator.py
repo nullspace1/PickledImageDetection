@@ -72,6 +72,7 @@ class DataCreator:
             
     def put_templates_on_screenshot(self, screenshot, templates):
         for template, box in templates:
+            if box != (-1, -1, -1, -1):
              screenshot[box[1]:box[1] + template.shape[0], box[0]:box[0] + template.shape[1]] = template
         return screenshot
     
