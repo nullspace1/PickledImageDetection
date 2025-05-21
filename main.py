@@ -27,8 +27,8 @@ image_processor = ImageProcessor()
 template_processor = TemplateProcessor(1000)
 hypernetwork = HyperNetwork(image_processor, template_processor)
 
-data_creator_train = DataCreator(args.screenshots_path, args.templates_path, args.generated_data_path, templates_per_screenshot=10, samples=args.samples)
-data_creator_validation = DataCreator(args.screenshots_path, args.templates_path, args.generated_data_path, templates_per_screenshot=10, samples=args.samples)
+data_creator_train = DataCreator(args.screenshots_path, args.templates_path, args.generated_data_path, templates_per_screenshot=10, samples=args.samples_train)
+data_creator_validation = DataCreator(args.screenshots_path, args.templates_path, args.generated_data_path, templates_per_screenshot=10, samples=args.samples_validation)
 training_data_loader = DataLoader(args.training_data_path, data_creator_train, batch_size=args.batch_size)
 validation_data_loader = DataLoader(args.validation_data_path, data_creator_validation, batch_size=args.batch_size)
 

@@ -42,7 +42,8 @@ python main.py --batch_size 1 --samples 1000 --epochs 10 --model_path "data/mode
 #### Command Line Arguments
 
 - `--batch_size`: Number of samples per training batch (default: 1)
-- `--samples`: Number of training samples to generate (default: 1000)
+- `--samples_train`: Number of training samples to generate (default: 1000)
+- `--samples_validation`: Number of validation samples to generate (default: 100)
 - `--epochs`: Number of training epochs (default: 10)
 - `--model_path`: Path to save/load the model (default: "data/model.pth")
 - `--generated_data_path`: Path for generated training data (default: "data/generated_data")
