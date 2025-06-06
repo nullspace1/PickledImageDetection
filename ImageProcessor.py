@@ -1,13 +1,20 @@
 import torch
-import timm
+import time
+from Backbone import Backbone
+import hashlib
 
 class ImageProcessor(torch.nn.Module):
     
     def __init__(self):
         super(ImageProcessor, self).__init__()
-        self.efficientnet = timm.create_model('efficientnet_b0', pretrained=True, features_only=True)
+        self.backbone = Backbone()
+        self.hash = hashlib.md5(str(self.parameters()).encode()).hexdigest()[:5]
+        
     def forward(self, x):
-        return self.efficientnet(x)[-1]
+        start_time = time.time()
+        result= self.backbone(x)
+        print(f"Time taken in image processor: {time.time() - start_time:.3f} seconds")
+        return result
 
     def parameter_count(self):
         return sum(p.numel() for p in self.parameters())

@@ -77,18 +77,18 @@ class DataCreator:
         return screenshot
     
     def create_heatmap(self, screenshot, template, box):
-        heatmap = np.zeros((screenshot.shape[0], screenshot.shape[1]))
+        heatmap = np.zeros((screenshot.shape[0], screenshot.shape[1]), dtype=np.uint8)
         heatmap[box[1]:box[1] + template.shape[0], box[0]:box[0] + template.shape[1]] = 255
-        return heatmap
+        return heatmap[:,:,np.newaxis]
     
     def save_data(self, screenshot, heatmap, template): 
-        path_screenshot = f"{self.generated_data_path}/screenshots/screenshot_{random.randint(0, 1000000)}.jpg"
-        path_heatmap = f"{self.generated_data_path}/heatmaps/heatmap_{random.randint(0, 1000000)}.png"
-        path_template = f"{self.generated_data_path}/templates/template_{random.randint(0, 1000000)}.jpg"
-        cv2.imwrite(path_screenshot, screenshot)
-        cv2.imwrite(path_heatmap, heatmap)
-        cv2.imwrite(path_template, template)
-        return path_screenshot, path_heatmap, path_template
+        path_screenshot = f"{self.generated_data_path}/screenshots/screenshot_{random.randint(0, 1000000)}"
+        path_heatmap = f"{self.generated_data_path}/heatmaps/heatmap_{random.randint(0, 1000000)}"
+        path_template = f"{self.generated_data_path}/templates/template_{random.randint(0, 1000000)}"
+        np.save(path_screenshot, screenshot)
+        np.save(path_heatmap, heatmap)
+        np.save(path_template, template)
+        return path_screenshot + ".npy", path_heatmap + ".npy", path_template + ".npy"
 
     
     def create_data(self, data_save_path):

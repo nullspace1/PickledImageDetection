@@ -54,6 +54,8 @@ class HyperNetwork(torch.nn.Module):
         
         return heatmap
     
+    def hash(self):
+        return self.image_processor.hash + "_" + self.template_processor.hash
     
     def loss(self,heatmap,real_heatmap):
         eps = 1e-7
