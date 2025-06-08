@@ -43,20 +43,32 @@ class DataProvider():
         
         @self.server.route('/', methods=['POST'])
         def data():
-            data = flask.request.get_json()
-            screenshot_sizes = data['screenshot_sizes']
-            template_sizes = data['template_sizes']
-            rectangle = data['rectangle']
-            
-            screenshot_shape = (screenshot_sizes[0], screenshot_sizes[1], screenshot_sizes[2])
-            template_shape = (template_sizes[0], template_sizes[1], template_sizes[2])
-            
-            screenshot = np.load(flask.request.files['screenshot'].stream).reshape(screenshot_shape)
-            template = np.load(flask.request.files['template'].stream).reshape(template_shape)
-            rectangle = (rectangle[0], rectangle[1], rectangle[2], rectangle[3])
-            
-            self.data_queue.put((screenshot, template, rectangle))
-            return flask.jsonify({'success': True})
+            if not flask.request.content_type or 'multipart/form-data' not in flask.request.content_type:
+                return flask.jsonify({'success': False, 'error': 'Request must be multipart/form-data'}), 415
+                
+            data = flask.request.form
+            if not data:
+                return flask.jsonify({'success': False, 'error': 'No form data received'}), 400
+                
+            try:
+                screenshot_sizes = eval(data['screenshot_sizes'])
+                template_sizes = eval(data['template_sizes'])
+                rectangle = eval(data['rectangle'])
+                
+                screenshot_shape = (screenshot_sizes[0], screenshot_sizes[1], screenshot_sizes[2])
+                template_shape = (template_sizes[0], template_sizes[1], template_sizes[2])
+                
+                if 'screenshot' not in flask.request.files or 'template' not in flask.request.files:
+                    return flask.jsonify({'success': False, 'error': 'Missing screenshot or template file'}), 400
+                
+                screenshot = np.load(flask.request.files['screenshot'].stream).reshape(screenshot_shape)
+                template = np.load(flask.request.files['template'].stream).reshape(template_shape)
+                rectangle = (rectangle[0], rectangle[1], rectangle[2], rectangle[3])
+                
+                self.data_queue.put((screenshot, template, rectangle))
+                return flask.jsonify({'success': True})
+            except Exception as e:
+                return flask.jsonify({'success': False, 'error': str(e)}), 400
 
         
     def start_gathering(self):
