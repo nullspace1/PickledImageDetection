@@ -5,17 +5,11 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import torch
-import numpy as np
 from Model.Hypernetwork import HyperNetwork
 from OnlineTraining.OnlineTrainer import OnlineTrainer
 from Model.ImageProcessor import ImageProcessor
 from Model.TemplateProcessor import TemplateProcessor
-import time
-import threading
-import socket
-import struct
 from OnlineTraining.DataProvider import DataProvider
-from OnlineTraining.DataReceiver import DataReceiver
 import argparse
 
 args = argparse.ArgumentParser()
@@ -25,6 +19,8 @@ args.add_argument("--host", type=str, default="0.0.0.0")
 args.add_argument("--save_interval", type=int, default=10)
 args.add_argument("--max_iterations", type=int, default=100000)
 args.add_argument("--model_folder_path", type=str, default="models")
+args.add_argument("--reuse_probability", type=float, default=0.3)
+args.add_argument("--max_reused_data", type=int, default=200)
 args = args.parse_args()
 
 image_processor = ImageProcessor()
@@ -33,5 +29,5 @@ model = HyperNetwork(image_processor, template_processor)
 
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
-online_trainer = OnlineTrainer(model, optimizer, DataProvider(DataReceiver(args.port, args.host), 0.3, 200), args.model_folder_path, args.save_interval, args.max_iterations)
+online_trainer = OnlineTrainer(model, optimizer, DataProvider(args.host, args.port, args.reuse_probability, args.max_reused_data), args.model_folder_path, args.save_interval, args.max_iterations)
 online_trainer.listen()

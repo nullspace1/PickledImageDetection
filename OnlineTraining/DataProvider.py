@@ -1,19 +1,20 @@
-from DataReceiver import DataReceiver
-from typing import Callable
-from threading import Lock
 import numpy as np
 import threading
 from threading import Semaphore
 import random
+import flask
+from threading import Lock
 
 class SynchronizedQueue():
     def __init__(self):
         self.queue = []
         self.semaphore = Semaphore(0)
+        self.lock = Lock()
         
     def put(self, item):
-        self.queue.append(item)
-        self.semaphore.release()
+        with self.lock:
+            self.queue.append(item)
+            self.semaphore.release()
             
     def get(self):
         self.semaphore.acquire()
@@ -21,30 +22,49 @@ class SynchronizedQueue():
         
 
 class DataProvider():
-    def __init__(self, data_receiver : DataReceiver, reuse_probability : float = 0.3, max_reused_data : int = 100):
-        self.data_receiver = data_receiver
+    def __init__(self, host : str, port : int, reuse_probability : float = 0.3, max_reused_data : int = 100):
         self.data_queue = SynchronizedQueue()
         self.reused_data = []
         self.reuse_probability = reuse_probability
         self.max_reused_data = max_reused_data
+        self.server = flask.Flask(__name__)
+        self.host = host
+        self.port = port
         
+        ## POST FORMAT
+        ## {
+        ##     "screenshot_sizes": [int, int, int],
+        ##     "template_sizes": [int, int, int],
+        ##     "rectangle": [int, int, int, int]
+        ##     "screenshot": base64,
+        ##     "template": base64
+        ## }
+        ## Returns: {"success": True}
+        
+        @self.server.route('/', methods=['POST'])
+        def data():
+            data = flask.request.get_json()
+            screenshot_sizes = data['screenshot_sizes']
+            template_sizes = data['template_sizes']
+            rectangle = data['rectangle']
+            
+            screenshot_shape = (screenshot_sizes[0], screenshot_sizes[1], screenshot_sizes[2])
+            template_shape = (template_sizes[0], template_sizes[1], template_sizes[2])
+            
+            screenshot = np.load(flask.request.files['screenshot'].stream).reshape(screenshot_shape)
+            template = np.load(flask.request.files['template'].stream).reshape(template_shape)
+            rectangle = (rectangle[0], rectangle[1], rectangle[2], rectangle[3])
+            
+            self.data_queue.put((screenshot, template, rectangle))
+            return flask.jsonify({'success': True})
+
         
     def start_gathering(self):
         threading.Thread(target=self.gather_data).start()
             
     def gather_data(self):
-        self.data_receiver.listen()
-        while True:
-            try:
-                screenshot_shape = self.data_receiver.get_integers(3)
-                template_shape = self.data_receiver.get_integers(3)
-                screenshot_data = self.data_receiver.get_array(screenshot_shape)
-                template_data = self.data_receiver.get_array(template_shape)
-                rectangle = self.data_receiver.get_integers(4)
-                self.data_queue.put((screenshot_data, template_data, rectangle))
-            except Exception as e:
-                print(f"Error gathering data from current client, reconnecting...")
-                self.data_receiver.listen()
+        print(f"Data provider running on {self.host}:{self.port}")
+        self.server.run(host=self.host, port=self.port)
         
     def get_next_data(self):
         if (random.random() < self.reuse_probability and len(self.reused_data) > 0):
