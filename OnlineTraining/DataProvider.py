@@ -4,16 +4,14 @@ from threading import Lock
 import numpy as np
 import threading
 from threading import Semaphore
+import random
 
 class SynchronizedQueue():
-    def __init__(self, maxsize=100):
+    def __init__(self):
         self.queue = []
         self.semaphore = Semaphore(0)
-        self.maxsize = maxsize
         
     def put(self, item):
-        if len(self.queue) >= self.maxsize:
-            self.queue.pop(0)  # Remove oldest item if queue is full
         self.queue.append(item)
         self.semaphore.release()
             
@@ -23,9 +21,13 @@ class SynchronizedQueue():
         
 
 class DataProvider():
-    def __init__(self, data_receiver : DataReceiver):
+    def __init__(self, data_receiver : DataReceiver, reuse_probability : float = 0.3, max_reused_data : int = 100):
         self.data_receiver = data_receiver
         self.data_queue = SynchronizedQueue()
+        self.reused_data = []
+        self.reuse_probability = reuse_probability
+        self.max_reused_data = max_reused_data
+        
         
     def start_gathering(self):
         threading.Thread(target=self.gather_data).start()
@@ -41,7 +43,12 @@ class DataProvider():
             self.data_queue.put((screenshot_data, template_data, rectangle))
         
     def get_next_data(self):
-        return self.data_queue.get()
-        
+        if (random.random() < self.reuse_probability and len(self.reused_data) > 0):
+            data = self.reused_data.pop(random.randint(0, len(self.reused_data) - 1))
+        else:
+            data = self.data_queue.get()
+        if (random.random() < self.reuse_probability and len(self.reused_data) < self.max_reused_data):
+            self.reused_data.append(data)
+        return data
         
         
