@@ -1,13 +1,13 @@
 import torch
 import cv2
 import numpy as np
-from ImageProcessor import ImageProcessor
-from TemplateProcessor import TemplateProcessor
+from Model.ImageProcessor import ImageProcessor
+from Model.TemplateProcessor import TemplateProcessor
 
 
 class HyperNetwork(torch.nn.Module):
     
-    def __init__(self, image_processor, template_processor : TemplateProcessor, weight_path = None):
+    def __init__(self, image_processor : ImageProcessor, template_processor : TemplateProcessor, weight_path = None):
         super(HyperNetwork, self).__init__()
         if weight_path is not None:
             self.load_state_dict(torch.load(weight_path))
@@ -55,7 +55,7 @@ class HyperNetwork(torch.nn.Module):
         return heatmap
     
     def hash(self):
-        return self.image_processor.hash + "_" + self.template_processor.hash
+        return self.template_processor.hash
     
     def loss(self,heatmap,real_heatmap):
         eps = 1e-7

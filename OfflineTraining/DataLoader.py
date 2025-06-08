@@ -3,7 +3,7 @@ import numpy as np
 import torch
 import cv2
 import random
-from DataCreator import DataCreator
+from OfflineTraining.DataCreator import DataCreator
 import time
 
 

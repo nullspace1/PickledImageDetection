@@ -1,3 +1,13 @@
 data/*
-model/__pycache__/*
-__pycache__/*
+*/__pycache__/*
+
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+*/__pycache__/*
+**/__pycache__/*
+
+**/*.pth 
+**/data/*
+**/models/*

@@ -5,7 +5,7 @@ import torch.nn.functional as F
 import hashlib
 import time
 import torchvision
-from Backbone import Backbone
+from Model.Backbone import Backbone
 class TemplateProcessor(nn.Module):
     
     def __init__(self, intermediate_size, final_kernel_channels=3):
@@ -18,8 +18,9 @@ class TemplateProcessor(nn.Module):
         self.relu_1 = nn.ReLU()
         self.linear2 = nn.Linear(intermediate_size, final_kernel_channels * self.backbone.channels * 3 * 3)
         self.relu_2 = nn.ReLU()
+        
+        self.hash = hashlib.md5(str(intermediate_size + final_kernel_channels).encode()).hexdigest()[:5]
        
-        self.hash = hashlib.md5(str(self.parameters()).encode()).hexdigest()[:5]
 
     def forward(self, x):
         start_time = time.time()

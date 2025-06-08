@@ -33,5 +33,5 @@ model = HyperNetwork(image_processor, template_processor)
 
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
-online_trainer = OnlineTrainer(model, optimizer, DataProvider(DataReceiver(args.port, args.host)), args.model_folder_path, args.save_interval, args.max_iterations)
+online_trainer = OnlineTrainer(model, optimizer, DataProvider(DataReceiver(args.port, args.host), 0.3, 200), args.model_folder_path, args.save_interval, args.max_iterations)
 online_trainer.listen()

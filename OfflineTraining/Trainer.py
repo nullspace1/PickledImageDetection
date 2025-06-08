@@ -8,11 +8,11 @@ import numpy as np
 import time
 import psutil
 import gc
-from Hypernetwork import HyperNetwork
-from ImageProcessor import ImageProcessor
-from DataLoader import DataLoader
-from DataCreator import DataCreator
-from TemplateProcessor import TemplateProcessor
+from Model.Hypernetwork import HyperNetwork
+from Model.ImageProcessor import ImageProcessor
+from OfflineTraining.DataLoader import DataLoader
+from OfflineTraining.DataCreator import DataCreator
+from Model.TemplateProcessor import TemplateProcessor
 import torch.nn.functional as F
 
 logging.basicConfig(
@@ -24,9 +24,9 @@ logging.basicConfig(
     ]
 )
 
-class Trainer():
+class OfflineTrainer():
     def __init__(self, model, dataloader, optimizer : torch.optim.Optimizer, model_path, patience = 10):
-        super(Trainer, self).__init__()
+        super(OfflineTrainer, self).__init__()
         self.model = model
         self.model_path = model_path[:-4] + "_" + self.model.hash() + ".pth"
         self.memory_stats = {

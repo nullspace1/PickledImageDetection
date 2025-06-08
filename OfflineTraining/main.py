@@ -1,10 +1,10 @@
 import torch
-from Hypernetwork import HyperNetwork
-from ImageProcessor import ImageProcessor
-from TemplateProcessor import TemplateProcessor
-from DataLoader import DataLoader
-from DataCreator import DataCreator
-from Trainer import Trainer
+from Model.Hypernetwork import HyperNetwork
+from Model.ImageProcessor import ImageProcessor
+from Model.TemplateProcessor import TemplateProcessor
+from OfflineTraining.DataLoader import DataLoader
+from OfflineTraining.DataCreator import DataCreator
+from OfflineTraining.Trainer import OfflineTrainer
 
 import argparse
 from multiprocessing import freeze_support
@@ -33,7 +33,7 @@ def main():
     training_data_loader = DataLoader(args.training_data_path, data_creator_train)
     validation_data_loader = DataLoader(args.validation_data_path, data_creator_validation)
 
-    trainer = Trainer(hypernetwork, training_data_loader, torch.optim.Adam(hypernetwork.parameters(), lr=0.001), args.model_path)
+    trainer = OfflineTrainer(hypernetwork, training_data_loader, torch.optim.Adam(hypernetwork.parameters(), lr=0.001), args.model_path)
 
     trainer.train(args.epochs)
 

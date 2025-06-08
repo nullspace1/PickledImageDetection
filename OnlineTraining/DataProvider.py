@@ -33,22 +33,28 @@ class DataProvider():
         threading.Thread(target=self.gather_data).start()
             
     def gather_data(self):
+        self.data_receiver.listen()
         while True:
-            self.data_receiver.listen()
-            screenshot_shape = self.data_receiver.get_integers(3)
-            template_shape = self.data_receiver.get_integers(3)
-            screenshot_data = self.data_receiver.get_array(screenshot_shape)
-            template_data = self.data_receiver.get_array(template_shape)
-            rectangle = self.data_receiver.get_integers(4)
-            self.data_queue.put((screenshot_data, template_data, rectangle))
+            try:
+                screenshot_shape = self.data_receiver.get_integers(3)
+                template_shape = self.data_receiver.get_integers(3)
+                screenshot_data = self.data_receiver.get_array(screenshot_shape)
+                template_data = self.data_receiver.get_array(template_shape)
+                rectangle = self.data_receiver.get_integers(4)
+                self.data_queue.put((screenshot_data, template_data, rectangle))
+            except Exception as e:
+                print(f"Error gathering data from current client, reconnecting...")
+                self.data_receiver.listen()
         
     def get_next_data(self):
         if (random.random() < self.reuse_probability and len(self.reused_data) > 0):
             data = self.reused_data.pop(random.randint(0, len(self.reused_data) - 1))
         else:
             data = self.data_queue.get()
-        if (random.random() < self.reuse_probability and len(self.reused_data) < self.max_reused_data):
+        if (random.random() < self.reuse_probability):
             self.reused_data.append(data)
+        if (len(self.reused_data) > self.max_reused_data):
+            self.reused_data.pop(0)
         return data
         
         

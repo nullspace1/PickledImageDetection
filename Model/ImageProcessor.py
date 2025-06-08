@@ -1,6 +1,6 @@
 import torch
 import time
-from Backbone import Backbone
+from Model.Backbone import Backbone
 import hashlib
 
 class ImageProcessor(torch.nn.Module):
@@ -8,7 +8,6 @@ class ImageProcessor(torch.nn.Module):
     def __init__(self):
         super(ImageProcessor, self).__init__()
         self.backbone = Backbone()
-        self.hash = hashlib.md5(str(self.parameters()).encode()).hexdigest()[:5]
         
     def forward(self, x):
         start_time = time.time()
