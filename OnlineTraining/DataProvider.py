@@ -46,14 +46,25 @@ class DataProvider():
             if not flask.request.content_type or 'multipart/form-data' not in flask.request.content_type:
                 return flask.jsonify({'success': False, 'error': 'Request must be multipart/form-data'}), 415
                 
-            data = flask.request.form
-            if not data:
+            form_data = flask.request.form
+            if not form_data:
                 return flask.jsonify({'success': False, 'error': 'No form data received'}), 400
                 
             try:
-                screenshot_sizes = eval(data['screenshot_sizes'])
-                template_sizes = eval(data['template_sizes'])
-                rectangle = eval(data['rectangle'])
+                screenshot_sizes_str = form_data.get('screenshot_sizes')
+                template_sizes_str = form_data.get('template_sizes')
+                rectangle_str = form_data.get('rectangle')
+                
+                if not all([screenshot_sizes_str, template_sizes_str, rectangle_str]):
+                    return flask.jsonify({'success': False, 'error': 'Missing required form fields'}), 400
+                
+                assert screenshot_sizes_str is not None
+                assert template_sizes_str is not None
+                assert rectangle_str is not None
+                
+                screenshot_sizes = eval(screenshot_sizes_str)
+                template_sizes = eval(template_sizes_str)
+                rectangle = eval(rectangle_str)
                 
                 screenshot_shape = (screenshot_sizes[0], screenshot_sizes[1], screenshot_sizes[2])
                 template_shape = (template_sizes[0], template_sizes[1], template_sizes[2])
