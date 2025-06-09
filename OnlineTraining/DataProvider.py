@@ -62,23 +62,16 @@ class DataProvider():
                 return flask.jsonify({'success': False, 'error': 'No form data received'}), 400
                 
             try:
-                screenshot_sizes_str = form_data.get('screenshot_sizes')
-                template_sizes_str = form_data.get('template_sizes')
+
                 rectangle_str = form_data.get('rectangle')
                 
-                if not all([screenshot_sizes_str, template_sizes_str, rectangle_str]):
+                if not all([rectangle_str]):
                     return flask.jsonify({'success': False, 'error': 'Missing required form fields'}), 400
                 
-                assert screenshot_sizes_str is not None
-                assert template_sizes_str is not None
                 assert rectangle_str is not None
                 
-                screenshot_sizes = eval(screenshot_sizes_str)
-                template_sizes = eval(template_sizes_str)
                 rectangle = eval(rectangle_str)
                 
-                screenshot_shape = (screenshot_sizes[0], screenshot_sizes[1], screenshot_sizes[2])
-                template_shape = (template_sizes[0], template_sizes[1], template_sizes[2])
                 
                 if 'screenshot' not in flask.request.files or 'template' not in flask.request.files:
                     return flask.jsonify({'success': False, 'error': 'Missing screenshot or template file'}), 400
@@ -105,8 +98,8 @@ class DataProvider():
                     ])
                     self.lock.acquire()
                     np.save(f"{self.data_folder}/data_{self.counter}.npy", data)
-                    self.lock.release()
                     self.counter += 1
+                    self.lock.release()
                     self.semaphore.release()
                     return flask.jsonify({'success': True})
                 except Exception as e:
@@ -125,21 +118,27 @@ class DataProvider():
         
     def gather_data_processed(self):
         while True:
+            
             self.semaphore.acquire()
             rnd_scr = random.randint(0, self.counter - 1)
-            self.lock.acquire()
-            data = np.load(f"{self.data_folder}/data_{rnd_scr}.npy", allow_pickle=True)[0]
-            for i in range(self.data_variant_to_generate):
-                screenshot, template, rectangle = data['screenshot'], data['template'], data['rectangle']
-                random_x = random.uniform(0.8,1.2)
-                random_y = random.uniform(0.8,1.2)
-                new_template = cv2.resize(template, (int(template.shape[1] * random_x), int(template.shape[0] * random_y)))
-                self.data_queue.put((screenshot, new_template, rectangle))
-                self.counter += 1
-            if (self.counter > self.max_data):
-                for i in range(self.max_data // 4):
-                    os.remove(f"{self.data_folder}/data_{i}.npy")
-            self.lock.release()
+            try:
+                self.lock.acquire()
+                data = np.load(f"{self.data_folder}/data_{rnd_scr}.npy", allow_pickle=True)[0]
+                for i in range(self.data_variant_to_generate):
+                    screenshot, template, rectangle = data['screenshot'], data['template'], data['rectangle']
+                    random_x = random.uniform(0.9,1.1)
+                    random_y = random.uniform(0.9,1.1)
+                    new_template = cv2.resize(template, (int(template.shape[1] * random_x), int(template.shape[0] * random_y)))
+                    self.data_queue.put((screenshot, new_template, rectangle))
+                if (self.counter > self.max_data):
+                    for i in range(self.max_data // 4):
+                        os.remove(f"{self.data_folder}/data_{i}.npy")
+                self.lock.release()
+            except Exception as e:
+                print(f"Error loading data: {e}")
+                self.lock.release()
+                continue
+            
         
     def get_next_data(self):
         if (random.random() < self.reuse_probability and len(self.reused_data) > 0):

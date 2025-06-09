@@ -45,7 +45,7 @@ class OnlineTrainer():
         screenshot, template, rectangle = self.data_provider.get_next_data()
         
         heatmap = np.zeros((1, 1, screenshot.shape[0], screenshot.shape[1]))
-        heatmap[0, 0, rectangle[0]:rectangle[0]+rectangle[2], rectangle[1]:rectangle[1]+rectangle[3]] = 1
+        heatmap[0, 0, rectangle[1]:rectangle[1]+rectangle[3], rectangle[0]:rectangle[0]+rectangle[2]] = 1
         
         screenshot = torch.from_numpy(screenshot).float().permute(2, 0, 1) / 255
         template = torch.from_numpy(template).float().permute(2, 0, 1) / 255
