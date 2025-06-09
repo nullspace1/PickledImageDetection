@@ -98,7 +98,7 @@ class DataProvider():
                     rectangle = (rectangle[0], rectangle[1], rectangle[2], rectangle[3])
 
                     self.data_queue.put((screenshot, template, rectangle))
-                    np.save(f"{self.data_folder}/data_{self.counter}.npy", [screenshot, template, rectangle])
+                    np.save(f"{self.data_folder}/data_{self.counter}.npy", [screenshot, template, [rectangle[0], rectangle[1], rectangle[2], rectangle[3]]])
                     self.counter += 1
                     self.semaphore.release()
                     return flask.jsonify({'success': True})
