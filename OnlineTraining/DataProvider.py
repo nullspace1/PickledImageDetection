@@ -5,6 +5,7 @@ import random
 import flask
 from threading import Lock
 import cv2
+import os
 
 class SynchronizedQueue():
     def __init__(self):
@@ -23,7 +24,7 @@ class SynchronizedQueue():
         
 
 class DataProvider():
-    def __init__(self, host : str, port : int, reuse_probability : float = 0.3, max_reused_data : int = 100):
+    def __init__(self, host : str, port : int, reuse_probability : float = 0.3, max_reused_data : int = 100, data_variant_to_generate : int = 10, max_data : int = 500):
         self.data_queue = SynchronizedQueue()
         self.reused_data = []
         self.reuse_probability = reuse_probability
@@ -31,6 +32,11 @@ class DataProvider():
         self.server = flask.Flask(__name__)
         self.host = host
         self.port = port
+        self.counter = 0
+        self.semaphore = Semaphore(0)
+        self.data_variant_to_generate = data_variant_to_generate
+        self.max_data = max_data
+        self.data_folder = "data"
         
         ## POST FORMAT
         ## {
@@ -87,8 +93,11 @@ class DataProvider():
                         template = cv2.resize(template, (template_shape[1], template_shape[0]))
                         
                     rectangle = (rectangle[0], rectangle[1], rectangle[2], rectangle[3])
-                    
+
                     self.data_queue.put((screenshot, template, rectangle))
+                    np.save(f"{self.data_folder}/data_{self.counter}.npy", (screenshot, template, rectangle))
+                    self.counter += 1
+                    self.semaphore.release()
                     return flask.jsonify({'success': True})
                 except Exception as e:
                     return flask.jsonify({'success': False, 'error': f'Error loading images: {str(e)}'}), 400
@@ -97,11 +106,29 @@ class DataProvider():
 
         
     def start_gathering(self):
-        threading.Thread(target=self.gather_data).start()
+        threading.Thread(target=self.gather_data_requests).start()
+        threading.Thread(target=self.gather_data_processed).start()
             
-    def gather_data(self):
+    def gather_data_requests(self):
         print(f"Data provider running on {self.host}:{self.port}")
         self.server.run(host=self.host, port=self.port)
+        
+    def gather_data_processed(self):
+        while True:
+            self.semaphore.acquire()
+            rnd_scr = random.randint(0, self.counter - 1)
+            data = np.load(f"{self.data_folder}/data_{rnd_scr}.npy")
+            for i in range(self.data_variant_to_generate):
+                (screenshot, template, rectangle) = data
+                random_x = random.uniform(0.8,1.2)
+                random_y = random.uniform(0.8,1.2)
+                new_template = cv2.resize(template, (int(template.shape[1] * random_x), int(template.shape[0] * random_y)))
+                self.data_queue.put((screenshot, new_template, rectangle))
+                self.counter += 1
+            if (self.counter > self.max_data):
+                for i in range(self.max_data // 4):
+                    os.remove(f"{self.data_folder}/data_{i}.npy")
+        
         
     def get_next_data(self):
         if (random.random() < self.reuse_probability and len(self.reused_data) > 0):
