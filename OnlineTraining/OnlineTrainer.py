@@ -5,6 +5,7 @@ import socket,struct
 import numpy as np
 from OnlineTraining.DataProvider import DataProvider
 import os
+import cv2
 
 class OnlineTrainer():
     
@@ -43,13 +44,18 @@ class OnlineTrainer():
         screenshot, template, rectangle = self.data_provider.get_next_data()
         
         heatmap = np.zeros((1, 1, screenshot.shape[0], screenshot.shape[1]))
-        heatmap[0, 0, rectangle[1]:rectangle[1]+rectangle[3], rectangle[0]:rectangle[0]+rectangle[2]] = 1
+        heatmap[0, 0, rectangle[0]:rectangle[0]+rectangle[2], rectangle[1]:rectangle[1]+rectangle[3]] = 1
         
         screenshot = torch.from_numpy(screenshot).float().permute(2, 0, 1) / 255
         template = torch.from_numpy(template).float().permute(2, 0, 1) / 255
         heatmap = torch.from_numpy(heatmap).float().mean(dim=0)
         
         print(f"Received data: {screenshot.shape}, {template.shape}, {heatmap.shape}")
+        
+        cv2.imwrite(f"{self.model_folder_path}/sample/screenshot.png", screenshot.cpu().numpy().transpose(1, 2, 0) * 255)
+        cv2.imwrite(f"{self.model_folder_path}/sample/template.png", template.cpu().numpy().transpose(1, 2, 0) * 255)
+        cv2.imwrite(f"{self.model_folder_path}/sample/heatmap.png", heatmap.cpu().numpy().transpose(1, 2, 0) * 255)
+        
         return screenshot, template, heatmap
         
 
