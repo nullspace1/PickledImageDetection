@@ -98,7 +98,16 @@ class DataProvider():
                     rectangle = (rectangle[0], rectangle[1], rectangle[2], rectangle[3])
 
                     self.data_queue.put((screenshot, template, rectangle))
-                    np.save(f"{self.data_folder}/data_{self.counter}.npy", [screenshot, template, [rectangle[0], rectangle[1], rectangle[2], rectangle[3]]])
+                    data = np.array([(
+                        screenshot,
+                        template,
+                        np.array([rectangle[0], rectangle[1], rectangle[2], rectangle[3]])
+                    )], dtype=[
+                        ('screenshot', 'O'),
+                        ('template', 'O'),
+                        ('rectangle', 'O')
+                    ])
+                    np.save(f"{self.data_folder}/data_{self.counter}.npy", data)
                     self.counter += 1
                     self.semaphore.release()
                     return flask.jsonify({'success': True})
@@ -120,9 +129,9 @@ class DataProvider():
         while True:
             self.semaphore.acquire()
             rnd_scr = random.randint(0, self.counter - 1)
-            data = np.load(f"{self.data_folder}/data_{rnd_scr}.npy", allow_pickle=True)
+            data = np.load(f"{self.data_folder}/data_{rnd_scr}.npy", allow_pickle=True)[0]
             for i in range(self.data_variant_to_generate):
-                screenshot, template, rectangle = data[0], data[1], data[2]
+                screenshot, template, rectangle = data['screenshot'], data['template'], data['rectangle']
                 random_x = random.uniform(0.8,1.2)
                 random_y = random.uniform(0.8,1.2)
                 new_template = cv2.resize(template, (int(template.shape[1] * random_x), int(template.shape[0] * random_y)))
