@@ -4,6 +4,7 @@ from threading import Semaphore
 import random
 import flask
 from threading import Lock
+import cv2
 
 class SynchronizedQueue():
     def __init__(self):
@@ -72,12 +73,25 @@ class DataProvider():
                 if 'screenshot' not in flask.request.files or 'template' not in flask.request.files:
                     return flask.jsonify({'success': False, 'error': 'Missing screenshot or template file'}), 400
                 
-                screenshot = np.load(flask.request.files['screenshot'].stream).reshape(screenshot_shape)
-                template = np.load(flask.request.files['template'].stream).reshape(template_shape)
-                rectangle = (rectangle[0], rectangle[1], rectangle[2], rectangle[3])
-                
-                self.data_queue.put((screenshot, template, rectangle))
-                return flask.jsonify({'success': True})
+                try:
+
+                    screenshot_stream = flask.request.files['screenshot'].stream
+                    template_stream = flask.request.files['template'].stream
+                    
+                    screenshot = cv2.imdecode(np.frombuffer(screenshot_stream.read(), np.uint8), cv2.IMREAD_COLOR)
+                    template = cv2.imdecode(np.frombuffer(template_stream.read(), np.uint8), cv2.IMREAD_COLOR)
+                    
+                    if screenshot.shape != screenshot_shape:
+                        screenshot = cv2.resize(screenshot, (screenshot_shape[1], screenshot_shape[0]))
+                    if template.shape != template_shape:
+                        template = cv2.resize(template, (template_shape[1], template_shape[0]))
+                        
+                    rectangle = (rectangle[0], rectangle[1], rectangle[2], rectangle[3])
+                    
+                    self.data_queue.put((screenshot, template, rectangle))
+                    return flask.jsonify({'success': True})
+                except Exception as e:
+                    return flask.jsonify({'success': False, 'error': f'Error loading images: {str(e)}'}), 400
             except Exception as e:
                 return flask.jsonify({'success': False, 'error': str(e)}), 400
 
