@@ -38,6 +38,9 @@ class DataProvider():
         self.max_data = max_data
         self.data_folder = "data"
         
+        if (not os.path.exists(self.data_folder)):
+            os.makedirs(self.data_folder)
+        
         ## POST FORMAT
         ## {
         ##     "screenshot_sizes": [int, int, int],
@@ -95,7 +98,7 @@ class DataProvider():
                     rectangle = (rectangle[0], rectangle[1], rectangle[2], rectangle[3])
 
                     self.data_queue.put((screenshot, template, rectangle))
-                    np.save(f"{self.data_folder}/data_{self.counter}.npy", (screenshot, template, rectangle))
+                    np.save(f"{self.data_folder}/data_{self.counter}.npy", [screenshot, template, rectangle])
                     self.counter += 1
                     self.semaphore.release()
                     return flask.jsonify({'success': True})
@@ -117,9 +120,9 @@ class DataProvider():
         while True:
             self.semaphore.acquire()
             rnd_scr = random.randint(0, self.counter - 1)
-            data = np.load(f"{self.data_folder}/data_{rnd_scr}.npy")
+            data = np.load(f"{self.data_folder}/data_{rnd_scr}.npy", allow_pickle=True)
             for i in range(self.data_variant_to_generate):
-                (screenshot, template, rectangle) = data
+                screenshot, template, rectangle = data[0], data[1], data[2]
                 random_x = random.uniform(0.8,1.2)
                 random_y = random.uniform(0.8,1.2)
                 new_template = cv2.resize(template, (int(template.shape[1] * random_x), int(template.shape[0] * random_y)))
