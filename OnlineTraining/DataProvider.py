@@ -37,6 +37,7 @@ class DataProvider():
         self.data_variant_to_generate = data_variant_to_generate
         self.max_data = max_data
         self.data_folder = "data"
+        self.lock = Lock()
         
         if (not os.path.exists(self.data_folder)):
             os.makedirs(self.data_folder)
@@ -89,12 +90,7 @@ class DataProvider():
                     
                     screenshot = cv2.imdecode(np.frombuffer(screenshot_stream.read(), np.uint8), cv2.IMREAD_COLOR)
                     template = cv2.imdecode(np.frombuffer(template_stream.read(), np.uint8), cv2.IMREAD_COLOR)
-                    
-                    if screenshot.shape != screenshot_shape:
-                        screenshot = cv2.resize(screenshot, (screenshot_shape[1], screenshot_shape[0]))
-                    if template.shape != template_shape:
-                        template = cv2.resize(template, (template_shape[1], template_shape[0]))
-                        
+                  
                     rectangle = (rectangle[0], rectangle[1], rectangle[2], rectangle[3])
 
                     self.data_queue.put((screenshot, template, rectangle))
@@ -107,7 +103,9 @@ class DataProvider():
                         ('template', 'O'),
                         ('rectangle', 'O')
                     ])
+                    self.lock.acquire()
                     np.save(f"{self.data_folder}/data_{self.counter}.npy", data)
+                    self.lock.release()
                     self.counter += 1
                     self.semaphore.release()
                     return flask.jsonify({'success': True})
@@ -129,6 +127,7 @@ class DataProvider():
         while True:
             self.semaphore.acquire()
             rnd_scr = random.randint(0, self.counter - 1)
+            self.lock.acquire()
             data = np.load(f"{self.data_folder}/data_{rnd_scr}.npy", allow_pickle=True)[0]
             for i in range(self.data_variant_to_generate):
                 screenshot, template, rectangle = data['screenshot'], data['template'], data['rectangle']
@@ -140,7 +139,7 @@ class DataProvider():
             if (self.counter > self.max_data):
                 for i in range(self.max_data // 4):
                     os.remove(f"{self.data_folder}/data_{i}.npy")
-        
+            self.lock.release()
         
     def get_next_data(self):
         if (random.random() < self.reuse_probability and len(self.reused_data) > 0):

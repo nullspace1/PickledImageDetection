@@ -20,6 +20,7 @@ class OnlineTrainer():
         self.model_folder_path = model_folder_path
         if not os.path.exists(self.model_folder_path):
             os.makedirs(self.model_folder_path)
+            os.makedirs(f"{self.model_folder_path}/sample")
 
     def train(self, image, template, heatmap):
        
