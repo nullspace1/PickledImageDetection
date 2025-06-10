@@ -29,7 +29,8 @@ class OnlineTrainer():
         result = self.model.forward(image, template)
         
         if i % 100 == 0:
-            cv2.imwrite(f"{self.model_folder_path}/sample/result_{i}.png", result.cpu().numpy().transpose(1, 2, 0) * 255)
+            cv2.imwrite(f"{self.model_folder_path}/sample/result_{i}.png", result.cpu().numpy().detach().transpose(1, 2, 0) * 255)
+            cv2.imwrite(f"{self.model_folder_path}/sample/heatmap_{i}.png", heatmap.cpu().numpy().detach().transpose(1, 2, 0) * 255)
         
         loss = self.model.loss(result, heatmap)
         self.optimizer.zero_grad()
