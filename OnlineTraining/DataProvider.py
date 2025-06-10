@@ -24,7 +24,7 @@ class SynchronizedQueue():
         
 
 class DataProvider():
-    def __init__(self, host : str, port : int, reuse_probability : float = 0.3, max_reused_data : int = 100, data_variant_to_generate : int = 10, max_data : int = 500):
+    def __init__(self, host : str, port : int, reuse_probability : float = 0.5, max_reused_data : int = 10, data_variant_to_generate : int = 10, max_data : int = 500):
         self.data_queue = SynchronizedQueue()
         self.reused_data = []
         self.reuse_probability = reuse_probability
@@ -131,7 +131,7 @@ class DataProvider():
                     new_template = cv2.resize(template, (int(template.shape[1] * random_x), int(template.shape[0] * random_y)))
                     self.data_queue.put((screenshot, new_template, rectangle))
                 if (self.counter > self.max_data):
-                    for i in range(self.max_data // 4):
+                    for i in range(self.max_data // 2):
                         os.remove(f"{self.data_folder}/data_{i}.npy")
                 self.lock.release()
             except Exception as e:

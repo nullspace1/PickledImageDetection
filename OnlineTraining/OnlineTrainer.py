@@ -52,10 +52,7 @@ class OnlineTrainer():
         heatmap = torch.from_numpy(heatmap).float().mean(dim=0)
         
         print(f"Received data: {screenshot.shape}, {template.shape}, {heatmap.shape}")
-        
-        cv2.imwrite(f"{self.model_folder_path}/sample/screenshot.png", screenshot.cpu().numpy().transpose(1, 2, 0) * 255)
-        cv2.imwrite(f"{self.model_folder_path}/sample/template.png", template.cpu().numpy().transpose(1, 2, 0) * 255)
-        cv2.imwrite(f"{self.model_folder_path}/sample/heatmap.png", heatmap.cpu().numpy().transpose(1, 2, 0) * 255)
+
         
         return screenshot, template, heatmap
         
