@@ -22,11 +22,15 @@ class OnlineTrainer():
             os.makedirs(self.model_folder_path)
             os.makedirs(f"{self.model_folder_path}/sample")
 
-    def train(self, image, template, heatmap):
+    def train(self, image, template, heatmap, i):
        
         print(f"Training with data: {image.shape}, {template.shape}, {heatmap.shape}")
        
         result = self.model.forward(image, template)
+        
+        if i % 100 == 0:
+            cv2.imwrite(f"{self.model_folder_path}/sample/result_{i}.png", result.cpu().numpy().transpose(1, 2, 0) * 255)
+        
         loss = self.model.loss(result, heatmap)
         self.optimizer.zero_grad()
         loss.backward()
@@ -53,7 +57,7 @@ class OnlineTrainer():
         
         print(f"Received data: {screenshot.shape}, {template.shape}, {heatmap.shape}")
 
-        
+    
         return screenshot, template, heatmap
         
 
@@ -64,7 +68,7 @@ class OnlineTrainer():
         self.data_provider.start_gathering()
         for i in range(self.MAX_ITERATIONS):
             screenshot, template, heatmap = self.get_new_data()
-            self.train(screenshot, template, heatmap)
+            self.train(screenshot, template, heatmap, i)
             if i % self.save_interval == 0:
                 self.save_progress(f"{self.model_folder_path}/progress_{self.model.hash()}.pth")
                 self.log_progress(i)
