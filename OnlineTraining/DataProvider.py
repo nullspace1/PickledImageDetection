@@ -118,11 +118,11 @@ class DataProvider():
         
     def gather_data_processed(self):
         while True:
-            
+            self.semaphore.acquire()
             rnd_scr = random.choice(self.file_ids)
             try:
                 self.lock.acquire()
-                data = np.load(f"{self.data_folder}/data_{rnd_scr}.npy", allow_pickle=True)[0]
+                data = np.load(rnd_scr, allow_pickle=True)[0]
                 for i in range(self.data_variant_to_generate):
                     screenshot, template, rectangle = data['screenshot'], data['template'], data['rectangle']
                     random_x = random.uniform(0.9,1.1)
@@ -131,7 +131,7 @@ class DataProvider():
                     self.data_queue.put((screenshot, new_template, rectangle))
                 if (self.counter > self.max_data):
                     for i in range(self.max_data // 2):
-                        self.file_ids.remove(self.file_ids[i])
+                        self.file_ids.pop(i)
                         os.remove(self.file_ids[i])
                 self.lock.release()
             except Exception as e:
