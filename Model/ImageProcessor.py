@@ -10,9 +10,7 @@ class ImageProcessor(torch.nn.Module):
         self.backbone = Backbone()
         
     def forward(self, x):
-        start_time = time.time()
         result= self.backbone(x)
-        print(f"Time taken in image processor: {time.time() - start_time:.3f} seconds")
         return result
 
     def parameter_count(self):

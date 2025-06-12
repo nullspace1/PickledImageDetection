@@ -23,11 +23,9 @@ class TemplateProcessor(nn.Module):
        
 
     def forward(self, x):
-        start_time = time.time()
         features = self.backbone(x)           
         pooled = self.pool(features).view(features.size(0), -1) 
         x = self.relu_1(self.linear1(pooled))                        
         x = self.relu_2(self.linear2(x))                             
         x = x.view(x.size(0), self.final_kernel_channels, self.backbone.channels, 3, 3)
-        print(f"Time taken in template processor: {time.time() - start_time:.3f} seconds")
         return x

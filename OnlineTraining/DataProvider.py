@@ -36,6 +36,7 @@ class DataProvider():
         self.max_data = max_data
         self.data_folder = "data"
         self.lock = Lock()
+        self.file_ids = []
         
         if (not os.path.exists(self.data_folder)):
             os.makedirs(self.data_folder)
@@ -68,7 +69,7 @@ class DataProvider():
                 
                 assert rectangle_str is not None
                 
-                rectangle = eval(rectangle_str)
+                rectangles = eval(rectangle_str)
                 
                 
                 if 'screenshot' not in flask.request.files or 'template' not in flask.request.files:
@@ -82,13 +83,13 @@ class DataProvider():
                     screenshot = cv2.imdecode(np.frombuffer(screenshot_stream.read(), np.uint8), cv2.IMREAD_COLOR)
                     template = cv2.imdecode(np.frombuffer(template_stream.read(), np.uint8), cv2.IMREAD_COLOR)
                   
-                    rectangle = (rectangle[0], rectangle[1], rectangle[2], rectangle[3])
+                    rectangles = [(rectangle[0], rectangle[1], rectangle[2], rectangle[3]) for rectangle in rectangles]
 
-                    self.data_queue.put((screenshot, template, rectangle))
+                    self.data_queue.put((screenshot, template, rectangles))
                     data = np.array([(
                         screenshot,
                         template,
-                        np.array([rectangle[0], rectangle[1], rectangle[2], rectangle[3]])
+                        np.array(rectangles)
                     )], dtype=[
                         ('screenshot', 'O'),
                         ('template', 'O'),
@@ -96,6 +97,7 @@ class DataProvider():
                     ])
                     self.lock.acquire()
                     np.save(f"{self.data_folder}/data_{self.counter}.npy", data)
+                    self.file_ids.append(f"{self.data_folder}/data_{self.counter}.npy")
                     self.counter += 1
                     self.lock.release()
                     self.semaphore.release()
@@ -117,20 +119,20 @@ class DataProvider():
     def gather_data_processed(self):
         while True:
             
-            self.semaphore.acquire()
-            rnd_scr = random.randint(0, self.counter - 1)
+            rnd_scr = random.choice(self.file_ids)
             try:
                 self.lock.acquire()
                 data = np.load(f"{self.data_folder}/data_{rnd_scr}.npy", allow_pickle=True)[0]
                 for i in range(self.data_variant_to_generate):
-                    screenshot, template, rectangle = data['screenshot'], data['template'], data['rectangle']
+                    screenshot, template, rectangles = data['screenshot'], data['template'], data['rectangle']
                     random_x = random.uniform(0.9,1.1)
                     random_y = random.uniform(0.9,1.1)
                     new_template = cv2.resize(template, (int(template.shape[1] * random_x), int(template.shape[0] * random_y)))
-                    self.data_queue.put((screenshot, new_template, rectangle))
+                    self.data_queue.put((screenshot, new_template, rectangles))
                 if (self.counter > self.max_data):
                     for i in range(self.max_data // 2):
-                        os.remove(f"{self.data_folder}/data_{i}.npy")
+                        self.file_ids.remove(self.file_ids[i])
+                        os.remove(self.file_ids[i])
                 self.lock.release()
             except Exception as e:
                 print(f"Error loading data: {e}")
