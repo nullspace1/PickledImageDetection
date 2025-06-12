@@ -118,7 +118,7 @@ class DataProvider():
         
     def gather_data_processed(self):
         while True:
-            
+            self.semaphore.acquire()
             rnd_scr = random.choice(self.file_ids)
             try:
                 self.lock.acquire()
