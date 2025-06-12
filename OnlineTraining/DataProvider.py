@@ -69,7 +69,7 @@ class DataProvider():
                 
                 assert rectangle_str is not None
                 
-                rectangles = eval(rectangle_str)
+                rectangle = eval(rectangle_str)
                 
                 
                 if 'screenshot' not in flask.request.files or 'template' not in flask.request.files:
@@ -83,13 +83,13 @@ class DataProvider():
                     screenshot = cv2.imdecode(np.frombuffer(screenshot_stream.read(), np.uint8), cv2.IMREAD_COLOR)
                     template = cv2.imdecode(np.frombuffer(template_stream.read(), np.uint8), cv2.IMREAD_COLOR)
                   
-                    rectangles = [(rectangle[0], rectangle[1], rectangle[2], rectangle[3]) for rectangle in rectangles]
+                    rectangle = np.array([rectangle[0], rectangle[1], rectangle[2], rectangle[3]])
 
-                    self.data_queue.put((screenshot, template, rectangles))
+                    self.data_queue.put((screenshot, template, rectangle))
                     data = np.array([(
                         screenshot,
                         template,
-                        np.array(rectangles)
+                        rectangle
                     )], dtype=[
                         ('screenshot', 'O'),
                         ('template', 'O'),
@@ -124,11 +124,11 @@ class DataProvider():
                 self.lock.acquire()
                 data = np.load(f"{self.data_folder}/data_{rnd_scr}.npy", allow_pickle=True)[0]
                 for i in range(self.data_variant_to_generate):
-                    screenshot, template, rectangles = data['screenshot'], data['template'], data['rectangle']
+                    screenshot, template, rectangle = data['screenshot'], data['template'], data['rectangle']
                     random_x = random.uniform(0.9,1.1)
                     random_y = random.uniform(0.9,1.1)
                     new_template = cv2.resize(template, (int(template.shape[1] * random_x), int(template.shape[0] * random_y)))
-                    self.data_queue.put((screenshot, new_template, rectangles))
+                    self.data_queue.put((screenshot, new_template, rectangle))
                 if (self.counter > self.max_data):
                     for i in range(self.max_data // 2):
                         self.file_ids.remove(self.file_ids[i])
