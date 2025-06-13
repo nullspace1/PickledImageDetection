@@ -55,7 +55,8 @@ class OnlineTrainer():
         plt.plot(self.loss_history)
         plt.savefig(f"{self.model_folder_path}/loss_history_{i}.png")
         plt.clf()
-        self.loss_history = []
+        if (i % 1000 == 0):
+            self.loss_history = []
         
             
     def save_progress(self, path):
