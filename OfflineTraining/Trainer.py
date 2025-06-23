@@ -7,13 +7,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 import time
 import psutil
-import gc
 from Model.Hypernetwork import HyperNetwork
 from Model.ImageProcessor import ImageProcessor
 from OfflineTraining.DataLoader import DataLoader
 from OfflineTraining.DataCreator import DataCreator
 from Model.TemplateProcessor import TemplateProcessor
 import torch.nn.functional as F
+import cv2
 
 logging.basicConfig(
     level=logging.INFO,
@@ -25,8 +25,10 @@ logging.basicConfig(
 )
 
 class OfflineTrainer():
-    def __init__(self, model, dataloader, optimizer : torch.optim.Optimizer, model_path, patience = 10):
+    def __init__(self, model, training_data_loader,validation_data_loader, optimizer : torch.optim.Optimizer, model_path, patience = 10):
+        
         super(OfflineTrainer, self).__init__()
+        
         self.model = model
         self.model_path = model_path[:-4] + "_" + self.model.hash() + ".pth"
         self.memory_stats = {
@@ -41,7 +43,8 @@ class OfflineTrainer():
             logging.info(f"No model found at {self.model_path}, creating new model")
             
         self.optimizer = optimizer
-        self.data = dataloader
+        self.validation_data = validation_data_loader
+        self.training_data = training_data_loader
         self.best_loss = float('inf')
         self.train_losses = []
         self.val_losses = []
@@ -49,18 +52,19 @@ class OfflineTrainer():
         self.best_loss = float('inf')
         self.best_loss_epoch = 0
         
+        self.results_path = 'data/results'
+        os.makedirs(self.results_path, exist_ok=True)
+        
     def is_compatible(self, model_path):
         return os.path.exists(model_path) and model_path[:-4].endswith(self.model.hash()) and model_path[-4:] == ".pth"
 
     def get_memory_stats(self):
-        # Get GPU memory stats if CUDA is available
         gpu_memory = 0
         if torch.cuda.is_available():
-            gpu_memory = torch.cuda.memory_allocated() / 1024**2  # Convert to MB
+            gpu_memory = torch.cuda.memory_allocated() / 1024**2
         
-        # Get CPU memory stats
         process = psutil.Process()
-        cpu_memory = process.memory_info().rss / 1024**2  # Convert to MB
+        cpu_memory = process.memory_info().rss / 1024**2
         
         return gpu_memory, cpu_memory
 
@@ -73,7 +77,6 @@ class OfflineTrainer():
     def plot_memory_usage(self):
         plt.figure(figsize=(12, 6))
         
-        # Convert timestamps to relative time in minutes
         timestamps = np.array(self.memory_stats['timestamps'])
         relative_time = (timestamps - timestamps[0]) / 60
         
@@ -85,41 +88,31 @@ class OfflineTrainer():
         plt.title('Memory Usage Over Time')
         plt.legend()
         plt.grid(True)
-        plt.savefig('data/memory_usage.png')
+        plt.savefig(f'{self.results_path}/memory_usage.png')
         plt.close()
 
     def train_epoch(self,epoch):
         running_loss = 0.0
-        pbar = tqdm(self.data, desc=f'Epoch {epoch}')
+        pbar = tqdm(self.training_data, desc=f'Epoch {epoch}')
         
         for batch_idx, batch in enumerate(pbar):
             try:
-                # Log memory stats at the start of each batch
                 self.log_memory_stats()
                 
                 images, templates, heatmaps = batch
                 
-                self.optimizer.zero_grad()
-                start_time = time.time()
-                with torch.autocast(device_type='cuda', dtype=torch.bfloat16):
-                    outputs = self.model(images, templates)
-                logging.info(f"Forward pass took {time.time() - start_time:.3f} seconds")
-                       
-                print(f"Outputs shape: {outputs.shape}, Heatmaps shape: {heatmaps.shape}")
-                if outputs.shape[1] != heatmaps.shape[1] or outputs.shape[2] != heatmaps.shape[2]:
-                    heatmaps = F.interpolate(heatmaps, size=(outputs.shape[1], outputs.shape[2]), mode='bilinear', align_corners=False)
-                
+                outputs = self.model(images, templates) 
                 loss = self.model.loss(outputs, heatmaps)
+                self.optimizer.zero_grad()
                 loss.backward()
                 self.optimizer.step()
                 
                 running_loss += loss.item()
-                pbar.set_postfix({'loss': f'{running_loss/len(self.data):.3f}'})
-                
-                # Clean up memory
+                pbar.set_postfix({'loss': f'{running_loss/len(self.training_data):.3f}'})
+
                 del images, templates, heatmaps, outputs
-                torch.cuda.empty_cache()
-                gc.collect()
+                if torch.cuda.is_available():
+                    torch.cuda.empty_cache()
                 
             except Exception as e:
                 logging.error(f"Error in training batch: {str(e)}")
@@ -129,7 +122,7 @@ class OfflineTrainer():
                 logging.error(traceback.format_exc())
                 continue
 
-        epoch_loss = running_loss / len(self.data)
+        epoch_loss = running_loss / len(self.training_data)
         self.train_losses.append(epoch_loss)
         
         if running_loss < self.best_loss:
@@ -150,14 +143,18 @@ class OfflineTrainer():
     def validate(self,epoch):
         self.model.eval()
         running_loss = 0.0
-        pbar = tqdm(self.data, desc=f'Validation')
+        pbar = tqdm(self.validation_data, desc=f'Validation')
         for _, batch in enumerate(pbar):
-            images, templates, heatmaps = batch  
-            outputs = self.model(images, templates)
-            loss = self.model.loss(outputs, heatmaps)    
+            image, template, heatmap = batch  
+            outputs = self.model(image, template)
+            loss = self.model.loss(outputs, heatmap)    
             running_loss += loss.item()
-            pbar.set_postfix({'loss': f'{running_loss/len(self.data):.3f}'})    
-        val_loss = running_loss / len(self.data)
+            pbar.set_postfix({'loss': f'{running_loss/len(self.validation_data):.3f}'})
+            if epoch % 3 == 0:
+                cv2.imwrite(f'{self.results_path}/outputs_{epoch}.png', outputs.permute(1, 2, 0).cpu().detach().numpy() * 255)
+                cv2.imwrite(f'{self.results_path}/heatmaps_{epoch}.png', heatmap.permute(1, 2, 0).cpu().detach().numpy() * 255)
+                torch.save(self.model.state_dict(), self.model_path)
+        val_loss = running_loss / len(self.validation_data)
         self.val_losses.append(val_loss)
         print(f'Validation loss at epoch {epoch} : {val_loss:.3f}')
         
@@ -170,6 +167,6 @@ class OfflineTrainer():
         plt.title('Training and Validation Losses')
         plt.legend()
         plt.grid(True)
-        plt.savefig('data/loss_plot.png')
+        plt.savefig(f'{self.results_path}/loss_plot.png')
         plt.close()
         

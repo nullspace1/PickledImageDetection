@@ -14,7 +14,7 @@ class DataCreator:
         self.samples = samples
         self.generated_data_path = generated_data_path
         self.MAX_SIZE = 50 * 1024 * 1024
-        self.MAX_DISTORTION = (0.8,1.2)
+        self.MAX_DISTORTION = (1,1)
         self.MAX_SIZE = 50 * 1024 * 1024
         
         os.makedirs(f"{self.generated_data_path}/screenshots", exist_ok=True)

@@ -1,4 +1,9 @@
 import torch
+import sys
+import os
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from Model.Hypernetwork import HyperNetwork
 from Model.ImageProcessor import ImageProcessor
 from Model.TemplateProcessor import TemplateProcessor
@@ -28,12 +33,12 @@ def main():
     template_processor = TemplateProcessor(1000)
     hypernetwork = HyperNetwork(image_processor, template_processor)
 
-    data_creator_train = DataCreator(args.screenshots_path, args.templates_path, args.generated_data_path, templates_per_screenshot=10, samples=args.samples_train)
-    data_creator_validation = DataCreator(args.screenshots_path, args.templates_path, args.generated_data_path, templates_per_screenshot=10, samples=args.samples_validation)
+    data_creator_train = DataCreator(args.screenshots_path, args.templates_path, args.generated_data_path, templates_per_screenshot=1, samples=args.samples_train)
+    data_creator_validation = DataCreator(args.screenshots_path, args.templates_path, args.generated_data_path, templates_per_screenshot=1, samples=args.samples_validation)
     training_data_loader = DataLoader(args.training_data_path, data_creator_train)
     validation_data_loader = DataLoader(args.validation_data_path, data_creator_validation)
 
-    trainer = OfflineTrainer(hypernetwork, training_data_loader, torch.optim.Adam(hypernetwork.parameters(), lr=0.001), args.model_path)
+    trainer = OfflineTrainer(hypernetwork, training_data_loader, validation_data_loader, torch.optim.Adam(hypernetwork.parameters(), lr=0.001), args.model_path)
 
     trainer.train(args.epochs)
 
