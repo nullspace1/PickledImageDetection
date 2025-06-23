@@ -3,3 +3,13 @@ opencv-python
 torch
 timm
 tqdm
+torch
+logging
+traceback
+matplotlib.pyplot
+numpy
+time
+psutil
+gc
+torch.nn.functional
+cv2
