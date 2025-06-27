@@ -25,7 +25,7 @@ logging.basicConfig(
 )
 
 class OfflineTrainer():
-    def __init__(self, model, training_data_loader,validation_data_loader, optimizer : torch.optim.Optimizer, model_path, patience = 10):
+    def __init__(self, model, training_data_loader,validation_data_loader, optimizer : torch.optim.Optimizer, model_path, logging_interval = 10, patience = 10):
         
         super(OfflineTrainer, self).__init__()
         
@@ -51,9 +51,11 @@ class OfflineTrainer():
         self.patience = patience
         self.best_loss = float('inf')
         self.best_loss_epoch = 0
+        self.logging_interval = logging_interval
         
         self.results_path = 'data/results'
         os.makedirs(self.results_path, exist_ok=True)
+        
         
     def is_compatible(self, model_path):
         return os.path.exists(model_path) and model_path[:-4].endswith(self.model.hash()) and model_path[-4:] == ".pth"
@@ -134,8 +136,14 @@ class OfflineTrainer():
         for epoch in range(epochs):
             self.train_epoch(epoch)
             self.validate(epoch)
-            self.plot_losses()
-            self.plot_memory_usage()  # Plot memory usage after each epoch
+            if epoch % self.logging_interval == 0:
+                image, template, heatmap, outputs = self.sample_output
+                cv2.imwrite(f'{self.results_path}/outputs_{epoch}.png', outputs.permute(1, 2, 0).cpu().detach().numpy() * 255)
+                cv2.imwrite(f'{self.results_path}/heatmaps_{epoch}.png', heatmap.permute(1, 2, 0).cpu().detach().numpy() * 255)
+                cv2.imwrite(f'{self.results_path}/screenshots_{epoch}.png', image.squeeze(0).permute(1, 2, 0).cpu().detach().numpy() * 255)
+                cv2.imwrite(f'{self.results_path}/templates_{epoch}.png', template.squeeze(0).permute(1, 2, 0).cpu().detach().numpy() * 255)
+                self.plot_losses()
+                self.plot_memory_usage()  # Plot memory usage after each epoch
             if epoch - self.best_loss_epoch > self.patience:
                 logging.info(f"Early stopping triggered at epoch {epoch}")
                 break
@@ -150,13 +158,13 @@ class OfflineTrainer():
             loss = self.model.loss(outputs, heatmap)    
             running_loss += loss.item()
             pbar.set_postfix({'loss': f'{running_loss/len(self.validation_data):.3f}'})
-            if epoch % 3 == 0:
-                cv2.imwrite(f'{self.results_path}/outputs_{epoch}.png', outputs.permute(1, 2, 0).cpu().detach().numpy() * 255)
-                cv2.imwrite(f'{self.results_path}/heatmaps_{epoch}.png', heatmap.permute(1, 2, 0).cpu().detach().numpy() * 255)
-                torch.save(self.model.state_dict(), self.model_path)
+            
+            if _ == 0 and epoch % self.logging_interval == 0:
+                self.sample_output = image, template, heatmap, outputs
+           
+        
         val_loss = running_loss / len(self.validation_data)
         self.val_losses.append(val_loss)
-        print(f'Validation loss at epoch {epoch} : {val_loss:.3f}')
         
     def plot_losses(self):
         plt.figure(figsize=(10, 5))
