@@ -145,9 +145,6 @@ class OfflineTrainer():
                 cv2.imwrite(f'{self.results_path}/templates.png', template.squeeze(0).permute(1, 2, 0).cpu().detach().numpy() * 255)
             self.plot_losses()
             self.plot_memory_usage()  # Plot memory usage after each epoch
-            if epoch - self.best_loss_epoch > self.patience:
-                logging.info(f"Early stopping triggered at epoch {epoch}")
-                break
         
     def validate(self,epoch):
         self.model.eval()
