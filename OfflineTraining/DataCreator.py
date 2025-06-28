@@ -35,7 +35,6 @@ class DataCreator:
         templates = []
         blurred = cv2.GaussianBlur(screenshot, (5, 5), 0)
         screenshot_edges = cv2.Canny(blurred, 50, 150)
-        cv2.imwrite(f"screenshot_edges_{random.randint(0, 1000000)}.png", screenshot_edges)
         contours, _ = cv2.findContours(screenshot_edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         contours = [contour for contour in contours if cv2.contourArea(contour) > 100]
         for _ in range(min(self.templates_per_screenshot, len(contours))):
