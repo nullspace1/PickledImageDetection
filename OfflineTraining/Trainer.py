@@ -138,10 +138,11 @@ class OfflineTrainer():
             self.validate(epoch)
             if epoch % self.logging_interval == 0:
                 image, template, heatmap, outputs = self.sample_output
-                cv2.imwrite(f'{self.results_path}/outputs_{epoch}.png', outputs.permute(1, 2, 0).cpu().detach().numpy() * 255)
-                cv2.imwrite(f'{self.results_path}/heatmaps_{epoch}.png', heatmap.permute(1, 2, 0).cpu().detach().numpy() * 255)
-                cv2.imwrite(f'{self.results_path}/screenshots_{epoch}.png', image.squeeze(0).permute(1, 2, 0).cpu().detach().numpy() * 255)
-                cv2.imwrite(f'{self.results_path}/templates_{epoch}.png', template.squeeze(0).permute(1, 2, 0).cpu().detach().numpy() * 255)
+                if epoch % (self.logging_interval * 10) == 0:
+                    cv2.imwrite(f'{self.results_path}/outputs_{epoch}.png', outputs.permute(1, 2, 0).cpu().detach().numpy() * 255)
+                    cv2.imwrite(f'{self.results_path}/heatmaps_{epoch}.png', heatmap.permute(1, 2, 0).cpu().detach().numpy() * 255)
+                    cv2.imwrite(f'{self.results_path}/screenshots_{epoch}.png', image.squeeze(0).permute(1, 2, 0).cpu().detach().numpy() * 255)
+                    cv2.imwrite(f'{self.results_path}/templates_{epoch}.png', template.squeeze(0).permute(1, 2, 0).cpu().detach().numpy() * 255)
                 self.plot_losses()
                 self.plot_memory_usage()  # Plot memory usage after each epoch
             if epoch - self.best_loss_epoch > self.patience:
