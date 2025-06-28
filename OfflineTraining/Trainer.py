@@ -14,6 +14,7 @@ from OfflineTraining.DataCreator import DataCreator
 from Model.TemplateProcessor import TemplateProcessor
 import torch.nn.functional as F
 import cv2
+import random
 
 logging.basicConfig(
     level=logging.INFO,
@@ -142,8 +143,8 @@ class OfflineTrainer():
                 cv2.imwrite(f'{self.results_path}/heatmaps.png', heatmap.permute(1, 2, 0).cpu().detach().numpy() * 255)
                 cv2.imwrite(f'{self.results_path}/screenshots.png', image.squeeze(0).permute(1, 2, 0).cpu().detach().numpy() * 255)
                 cv2.imwrite(f'{self.results_path}/templates.png', template.squeeze(0).permute(1, 2, 0).cpu().detach().numpy() * 255)
-                self.plot_losses()
-                self.plot_memory_usage()  # Plot memory usage after each epoch
+            self.plot_losses()
+            self.plot_memory_usage()  # Plot memory usage after each epoch
             if epoch - self.best_loss_epoch > self.patience:
                 logging.info(f"Early stopping triggered at epoch {epoch}")
                 break
@@ -152,14 +153,15 @@ class OfflineTrainer():
         self.model.eval()
         running_loss = 0.0
         pbar = tqdm(self.validation_data, desc=f'Validation')
-        for _, batch in enumerate(pbar):
+        rand_pos = random.randint(0, len(pbar))
+        for i, batch in enumerate(pbar):
             image, template, heatmap = batch  
             outputs = self.model(image, template)
             loss = self.model.loss(outputs, heatmap)    
             running_loss += loss.item()
             pbar.set_postfix({'loss': f'{running_loss/len(self.validation_data):.3f}'})
             
-            if _ == 0 and epoch % self.logging_interval == 0:
+            if i == rand_pos and epoch % self.logging_interval == 0:
                 self.sample_output = image, template, heatmap, outputs
            
         
