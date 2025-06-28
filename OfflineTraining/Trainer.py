@@ -95,6 +95,7 @@ class OfflineTrainer():
         plt.close()
 
     def train_epoch(self,epoch):
+        self.model.train()
         running_loss = 0.0
         pbar = tqdm(self.training_data, desc=f'Epoch {epoch}')
         
@@ -111,7 +112,7 @@ class OfflineTrainer():
                 self.optimizer.step()
                 
                 running_loss += loss.item()
-                pbar.set_postfix({'loss': f'{running_loss/len(self.training_data):.3f}'})
+                pbar.set_postfix({'loss': f'{loss.item():.3f}', 'avg_loss': f'{running_loss/(batch_idx+1):.3f}'})
 
                 del images, templates, heatmaps, outputs
                 if torch.cuda.is_available():
@@ -128,15 +129,32 @@ class OfflineTrainer():
         epoch_loss = running_loss / len(self.training_data)
         self.train_losses.append(epoch_loss)
         
-        if running_loss < self.best_loss:
-            self.best_loss = running_loss
+        if epoch_loss < self.best_loss:
+            self.best_loss = epoch_loss
             self.best_loss_epoch = epoch
             torch.save(self.model.state_dict(), self.model_path)
             
     def train(self,epochs):
+        patience_counter = 0
         for epoch in range(epochs):
             self.train_epoch(epoch)
             self.validate(epoch)
+            
+            # Early stopping logic
+            if len(self.val_losses) > 0:
+                current_val_loss = self.val_losses[-1]
+                if current_val_loss < self.best_loss:
+                    self.best_loss = current_val_loss
+                    self.best_loss_epoch = epoch
+                    patience_counter = 0
+                    torch.save(self.model.state_dict(), self.model_path)
+                else:
+                    patience_counter += 1
+                    
+                if patience_counter >= self.patience:
+                    logging.info(f"Early stopping triggered after {epoch + 1} epochs")
+                    break
+            
             if epoch % self.logging_interval == 0:
                 image, template, heatmap, outputs = self.sample_output
                 cv2.imwrite(f'{self.results_path}/outputs.png', outputs.permute(1, 2, 0).cpu().detach().numpy() * 255)
@@ -150,13 +168,14 @@ class OfflineTrainer():
         self.model.eval()
         running_loss = 0.0
         pbar = tqdm(self.validation_data, desc=f'Validation')
-        rand_pos = random.randint(0, len(pbar))
+        val_length = len(self.validation_data)
+        rand_pos = random.randint(0, max(0, val_length - 1)) if val_length > 0 else 0
         for i, batch in enumerate(pbar):
             image, template, heatmap = batch  
             outputs = self.model(image, template)
             loss = self.model.loss(outputs, heatmap)    
             running_loss += loss.item()
-            pbar.set_postfix({'loss': f'{running_loss/len(self.validation_data):.3f}'})
+            pbar.set_postfix({'loss': f'{loss.item():.3f}', 'avg_loss': f'{running_loss/(i+1):.3f}'})
             
             if i == rand_pos and epoch % self.logging_interval == 0:
                 self.sample_output = image, template, heatmap, outputs

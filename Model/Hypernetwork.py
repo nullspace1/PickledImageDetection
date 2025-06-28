@@ -58,7 +58,5 @@ class HyperNetwork(torch.nn.Module):
         return self.template_processor.hash
     
     def loss(self,heatmap,real_heatmap):
-        eps = 1e-7
-        heatmap = torch.clamp(heatmap, eps, 1.0 - eps)
         return torch.nn.functional.binary_cross_entropy(heatmap, real_heatmap)
         
