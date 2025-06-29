@@ -25,7 +25,7 @@ def main():
     parser.add_argument('--screenshots_path', type=str, default="data/screenshots", help='Path to the screenshots')
     parser.add_argument('--training_data_path', type=str, default="data/training_data.npy", help='Path to the training data')
     parser.add_argument('--validation_data_path', type=str, default="data/validation_data.npy", help='Path to the validation data')
-    parser.add_argument('--logging_interval', type=int, default=10, help='Interval to log the progress')
+    parser.add_argument('--logging_interval', type=int, default=2, help='Interval to log the progress')
 
     args = parser.parse_args()
 

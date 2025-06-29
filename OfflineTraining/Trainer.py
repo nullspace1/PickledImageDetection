@@ -26,7 +26,7 @@ logging.basicConfig(
 )
 
 class OfflineTrainer():
-    def __init__(self, model, training_data_loader,validation_data_loader, optimizer : torch.optim.Optimizer, model_path, logging_interval = 10, patience = 10):
+    def __init__(self, model, training_data_loader,validation_data_loader, optimizer : torch.optim.Optimizer, model_path, logging_interval = 10, patience = 30):
         
         super(OfflineTrainer, self).__init__()
         
@@ -157,10 +157,10 @@ class OfflineTrainer():
             
             if epoch % self.logging_interval == 0:
                 image, template, heatmap, outputs = self.sample_output
-                cv2.imwrite(f'{self.results_path}/outputs.png', outputs.permute(1, 2, 0).cpu().detach().numpy() * 255)
-                cv2.imwrite(f'{self.results_path}/heatmaps.png', heatmap.permute(1, 2, 0).cpu().detach().numpy() * 255)
-                cv2.imwrite(f'{self.results_path}/screenshots.png', image.squeeze(0).permute(1, 2, 0).cpu().detach().numpy() * 255)
-                cv2.imwrite(f'{self.results_path}/templates.png', template.squeeze(0).permute(1, 2, 0).cpu().detach().numpy() * 255)
+                cv2.imwrite(f'{self.results_path}/outputs_{epoch}.png', outputs.permute(1, 2, 0).cpu().detach().numpy() * 255)
+                cv2.imwrite(f'{self.results_path}/heatmaps_{epoch}.png', heatmap.permute(1, 2, 0).cpu().detach().numpy() * 255)
+                cv2.imwrite(f'{self.results_path}/screenshot_{epoch}s.png', image.squeeze(0).permute(1, 2, 0).cpu().detach().numpy() * 255)
+                cv2.imwrite(f'{self.results_path}/templates_{epoch}.png', template.squeeze(0).permute(1, 2, 0).cpu().detach().numpy() * 255)
             self.plot_losses()
             self.plot_memory_usage()  # Plot memory usage after each epoch
         
@@ -170,17 +170,17 @@ class OfflineTrainer():
         pbar = tqdm(self.validation_data, desc=f'Validation')
         val_length = len(self.validation_data)
         rand_pos = random.randint(0, max(0, val_length - 1)) if val_length > 0 else 0
+        min_loss = 1
         for i, batch in enumerate(pbar):
             image, template, heatmap = batch  
             outputs = self.model(image, template)
             loss = self.model.loss(outputs, heatmap)    
             running_loss += loss.item()
-            pbar.set_postfix({'loss': f'{loss.item():.3f}', 'avg_loss': f'{running_loss/(i+1):.3f}'})
-            
-            if i == rand_pos and epoch % self.logging_interval == 0:
+            if (loss < min_loss):
+                min_loss = loss
                 self.sample_output = image, template, heatmap, outputs
-           
-        
+
+ 
         val_loss = running_loss / len(self.validation_data)
         self.val_losses.append(val_loss)
         

@@ -33,10 +33,10 @@ class DataCreator:
       
     def get_templates(self, screenshot):
         templates = []
-        blurred = cv2.GaussianBlur(screenshot, (5, 5), 0)
+        blurred = cv2.GaussianBlur(screenshot, (7, 7), 0)
         screenshot_edges = cv2.Canny(blurred, 50, 150)
         contours, _ = cv2.findContours(screenshot_edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        contours = [contour for contour in contours if cv2.contourArea(contour) > 100]
+        contours = [contour for contour in contours if cv2.contourArea(contour) > 200]
         for _ in range(min(self.templates_per_screenshot, len(contours))):
             contour = random.choice(contours)
             x, y, w, h = cv2.boundingRect(contour)
