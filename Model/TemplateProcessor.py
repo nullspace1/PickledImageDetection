@@ -7,25 +7,22 @@ import time
 import torchvision
 from Model.Backbone import Backbone
 class TemplateProcessor(nn.Module):
-    
-    def __init__(self, intermediate_size, final_kernel_channels=3):
-        super().__init__()
-        self.final_kernel_channels = final_kernel_channels
-        self.backbone = Backbone()
 
-        self.pool = nn.AdaptiveAvgPool2d((1, 1))
-        self.linear1 = nn.Linear(self.backbone.channels, intermediate_size)
-        self.relu_1 = nn.ReLU()
-        self.linear2 = nn.Linear(intermediate_size, final_kernel_channels * self.backbone.channels * 3 * 3)
-        self.relu_2 = nn.ReLU()
+    def __init__(self, final_vector_size):
+        super().__init__()
+        self.final_vector_size = final_vector_size
+        self.backbone = Backbone()
+        self.kernel = nn.Conv2d(self.backbone.channels, self.final_vector_size, kernel_size=3, padding=1)
+        self.average_pool = nn.AdaptiveAvgPool2d((1, 1))
         
-        self.hash = hashlib.md5(str(intermediate_size + final_kernel_channels).encode()).hexdigest()[:5]
+        self.hash = hashlib.md5(str(self.final_vector_size).encode()).hexdigest()[:5]
        
 
     def forward(self, x):
         features = self.backbone(x)           
-        pooled = self.pool(features).view(features.size(0), -1) 
-        x = self.relu_1(self.linear1(pooled))                        
-        x = self.relu_2(self.linear2(x))                             
-        x = x.view(x.size(0), self.final_kernel_channels, self.backbone.channels, 3, 3)
-        return x
+        vector = self.kernel(features)
+        vector = self.average_pool(vector)
+        return vector
+    
+    def parameter_count(self):
+        return sum(p.numel() for p in self.parameters())
